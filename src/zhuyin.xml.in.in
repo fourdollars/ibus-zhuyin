@@ -16,7 +16,7 @@
 			<language>zh_TW</language>
 			<license>GPL</license>
 			<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
-			<icon>${pkgdatadir}/icons/ibus-zhuyin.svg</icon>
+			<icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
 			<layout>us</layout>
 			<longname>Zhuyin</longname>
 			<description>A real traditional Chinese zhuyin input method.</description>

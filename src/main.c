@@ -59,7 +59,7 @@ init (void)
                                                          "zh_TW",
                                                          "GPLv3",
                                                          "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
-                                                         PKGDATADIR"/icons/ibus-zhuyin.svg",
+                                                         PKGDATADIR"/icons/ibus-zhuyin.png",
                                                          "zh_TW"));
         ibus_bus_register_component (bus, component);
     }
