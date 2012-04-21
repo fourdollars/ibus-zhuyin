@@ -2,7 +2,7 @@ This project is forked from ibus-tmpl.
 
 A real traditional Chinese zhuyin input method for GNU/Linux.
 
-$ ./autogen.sh
+$ autoreconf -if
 $ ./configure --prefix=/usr
 $ make
 $ sudo make install
