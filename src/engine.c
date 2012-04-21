@@ -113,7 +113,7 @@ static void
 ibus_enchant_engine_update_lookup_table (IBusEnchantEngine *enchant)
 {
     gchar ** sugs;
-    gint n_sug, i;
+    gsize n_sug, i;
     gboolean retval;
 
     if (enchant->preedit->len == 0) {
