@@ -1,6 +1,6 @@
 # vim:set noet ts=4:
 #
-# ibus-tmpl - The Input Bus template project
+# ibus-zhuyin - Traditional Zhuyin Chinese Input Method
 #
 # Copyright (c) 2007-2011 Peng Huang <shawn.p.huang@gmail.com>
 #
@@ -23,7 +23,7 @@ engine_enchant_PYTHON = \
 	factory.py \
 	main.py \
 	$(NULL)
-engine_enchantdir = $(datadir)/ibus-tmpl
+engine_enchantdir = $(datadir)/ibus-zhuyin
 
 bin_SCRIPTS = ibus-engine-enchant
 

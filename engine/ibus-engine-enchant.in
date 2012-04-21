@@ -1,7 +1,7 @@
 #!/bin/sh
 # vim:set noet ts=4:
 #
-# ibus-tmpl - The Input Bus template project
+# ibus-zhuyin - Traditional Zhuyin Chinese Input Method
 #
 # Copyright (c) 2007-2011 Peng Huang <shawn.p.huang@gmail.com>
 #
@@ -19,5 +19,5 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-exec python @prefix@/share/ibus-tmpl/main.py $@
+exec python @prefix@/share/ibus-zhuyin/main.py $@
 

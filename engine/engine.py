@@ -1,6 +1,6 @@
 # vim:set et sts=4 sw=4:
 #
-# ibus-tmpl - The Input Bus template project
+# ibus-zhuyin - Traditional Zhuyin Chinese Input Method
 #
 # Copyright (c) 2007-2011 Peng Huang <shawn.p.huang@gmail.com>
 #

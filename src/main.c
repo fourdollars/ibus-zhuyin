@@ -51,7 +51,7 @@ init (void)
                                         "Peng Huang <shawn.p.huang@gmail.com>",
                                         "http://code.google.com/p/ibus/",
                                         "",
-                                        "ibus-tmpl");
+                                        "ibus-zhuyin");
         ibus_component_add_engine (component,
                                    ibus_engine_desc_new ("enchant",
                                                          "Enchant",
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
     /* Parse the command line */
     context = g_option_context_new ("- ibus template engine");
-    g_option_context_add_main_entries (context, entries, "ibus-tmpl");
+    g_option_context_add_main_entries (context, entries, "ibus-zhuyin");
 
     if (!g_option_context_parse (context, &argc, &argv, &error)) {
       g_print ("Option parsing failed: %s\n", error->message);

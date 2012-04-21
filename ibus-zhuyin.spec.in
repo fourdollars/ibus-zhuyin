@@ -42,8 +42,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS COPYING README
 # %dir %{python_sitearch}/ibus
 # %{python_sitearch}/ibus/*
-%dir %{_datadir}/ibus-tmpl
-%{_datadir}/ibus-tmpl
+%dir %{_datadir}/ibus-zhuyin
+%{_datadir}/ibus-zhuyin
 %{_bindir}/ibus-engine-enchant
 %{_datadir}/ibus/engine/enchant.engine
 
