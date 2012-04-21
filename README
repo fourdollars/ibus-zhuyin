@@ -1,6 +1,8 @@
 This project is forked from ibus-tmpl.
 
-A real traditional Chinese zhuyin input method for GNU/Linux.
+ibus-zhuyin - A real traditional Chinese zhuyin input method for GNU/Linux.
+
+Licensed by GPLv3
 
 $ autoreconf -if
 $ ./configure --prefix=/usr
