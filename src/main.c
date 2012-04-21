@@ -56,7 +56,7 @@ init (void)
                                    ibus_engine_desc_new ("enchant",
                                                          "Enchant",
                                                          "Enchant",
-                                                         "ko",
+                                                         "zh_TW",
                                                          "GPL",
                                                          "Peng Huang <shawn.p.huang@gmail.com>",
                                                          PKGDATADIR"/icons/ibus-enchant.svg",

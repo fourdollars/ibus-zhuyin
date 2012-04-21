@@ -13,7 +13,7 @@
 	<engines>
 		<engine>
 			<name>enchant-python</name>
-			<language>en</language>
+			<language>zh_TW</language>
 			<license>GPL</license>
 			<author>Peng Huang &lt;shawn.p.huang@gmail.com&gt;</author>
 			<icon>${pkgdatadir}/icons/ibus-enchant.png</icon>
