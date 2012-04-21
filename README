@@ -1,6 +1,6 @@
 This project is forked from ibus-tmpl.
 
-A real traditional zhuyin Chinese input method.
+A real traditional Chinese zhuyin input method for GNU/Linux.
 
 $ ./autogen.sh
 $ ./configure --prefix=/usr

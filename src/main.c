@@ -36,31 +36,31 @@ init (void)
 	
     factory = ibus_factory_new (ibus_bus_get_connection (bus));
     g_object_ref_sink (factory);
-    ibus_factory_add_engine (factory, "enchant", IBUS_TYPE_ENCHANT_ENGINE);
+    ibus_factory_add_engine (factory, "zhuyin", IBUS_TYPE_ZHUYIN_ENGINE);
 
     if (ibus) {
-        ibus_bus_request_name (bus, "org.freedesktop.IBus.Enchant", 0);
+        ibus_bus_request_name (bus, "org.freedesktop.IBus.Zhuyin", 0);
     }
     else {
         IBusComponent *component;
 
-        component = ibus_component_new ("org.freedesktop.IBus.Enchant",
-                                        "Enchant",
-                                        "0.1.0",
-                                        "GPL",
-                                        "Peng Huang <shawn.p.huang@gmail.com>",
-                                        "http://code.google.com/p/ibus/",
+        component = ibus_component_new ("org.freedesktop.IBus.Zhuyin",
+                                        "Zhuyin",
+                                        "0.0.0",
+                                        "GPLv3",
+                                        "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
+                                        "https://github.com/fourdollars/ibus-zhuyin",
                                         "",
                                         "ibus-zhuyin");
         ibus_component_add_engine (component,
-                                   ibus_engine_desc_new ("enchant",
-                                                         "Enchant",
-                                                         "Enchant",
+                                   ibus_engine_desc_new ("zhuyin",
+                                                         "Zhuyin",
+                                                         "Zhuyin",
                                                          "zh_TW",
-                                                         "GPL",
-                                                         "Peng Huang <shawn.p.huang@gmail.com>",
-                                                         PKGDATADIR"/icons/ibus-enchant.svg",
-                                                         "us"));
+                                                         "GPLv3",
+                                                         "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
+                                                         PKGDATADIR"/icons/ibus-zhuyin.svg",
+                                                         "zh_TW"));
         ibus_bus_register_component (bus, component);
     }
 }
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     GOptionContext *context;
 
     /* Parse the command line */
-    context = g_option_context_new ("- ibus template engine");
+    context = g_option_context_new ("- a real traditional zhuyin Chinese input method");
     g_option_context_add_main_entries (context, entries, "ibus-zhuyin");
 
     if (!g_option_context_parse (context, &argc, &argv, &error)) {

@@ -19,37 +19,37 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-libexec_PROGRAMS = ibus-engine-enchant
+libexec_PROGRAMS = ibus-engine-zhuyin
 
-ibus_engine_enchant_SOURCES = \
+ibus_engine_zhuyin_SOURCES = \
 	main.c \
 	engine.c \
 	engine.h \
 	$(NULL)
-ibus_engine_enchant_CFLAGS = \
+ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \
 	@ENCHANT_CFLAGS@ \
 	-DPKGDATADIR=\"$(pkgdatadir)\"
 	$(NULL)
-ibus_engine_enchant_LDFLAGS = \
+ibus_engine_zhuyin_LDFLAGS = \
 	@IBUS_LIBS@ \
 	@ENCHANT_LIBS@
 	$(NULL)
 
 component_DATA = \
-	enchant.xml \
+	zhuyin.xml \
 	$(NULL)
 componentdir = @datadir@/ibus/component
 
 EXTRA_DIST = \
-	enchant.xml.in \
+	zhuyin.xml.in \
 	$(NULL)
 
 CLEANFILES = \
-	enchant.xml \
+	zhuyin.xml \
 	$(NULL)
 
-enchant.xml: enchant.xml.in
+zhuyin.xml: zhuyin.xml.in
 	$(AM_V_GEN) \
 	( \
 		libexecdir=${libexecdir}; \
@@ -58,5 +58,5 @@ enchant.xml: enchant.xml.in
 		eval "echo \"$${s}\""; \
 	) > $@
 
-test: ibus-engine-enchant
-	$(builddir)/ibus-engine-enchant
+test: ibus-engine-zhuyin
+	$(builddir)/ibus-engine-zhuyin

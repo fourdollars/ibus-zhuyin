@@ -31,6 +31,7 @@ m4_define([ibus_version],
     ibus_major_version.ibus_minor_version.ibus_micro_version[]ibus_maybe_datestamp)
 
 AC_INIT([package_name], [ibus_version], [http://code.google.com/p/ibus/issues/entry], [package_name])
+AM_MAINTAINER_MODE([enable])
 AM_INIT_AUTOMAKE([1.10])
 AC_GNU_SOURCE
 
@@ -76,7 +77,7 @@ AC_CONFIG_FILES(po/Makefile.in
 Makefile
 ibus-zhuyin.spec
 src/Makefile
-src/enchant.xml.in
+src/zhuyin.xml.in
 icons/Makefile
 m4/Makefile
 )

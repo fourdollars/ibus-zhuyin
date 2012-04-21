@@ -1,0 +1,27 @@
+<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<!-- filename: zhuyin.xml -->
+<component>
+	<name>org.freedesktop.IBus.Zhuyin</name>
+	<description>A real traditional Chinese zhuyin input method.</description>
+	<exec>${libexecdir}/ibus-engine-zhuyin --ibus</exec>
+	<version>@VERSION@</version>
+	<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+	<license>GPLv3</license>
+	<homepage>http://code.google.com/p/ibus</homepage>
+	<textdomain>ibus-zhuyin</textdomain>
+
+	<engines>
+		<engine>
+			<name>zhuyin</name>
+			<language>zh_TW</language>
+			<license>GPL</license>
+			<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+			<icon>${pkgdatadir}/icons/ibus-zhuyin.svg</icon>
+			<layout>us</layout>
+			<longname>Zhuyin</longname>
+			<description>A real traditional Chinese zhuyin input method.</description>
+			<rank>0</rank>
+		</engine>
+	</engines>
+
+</component>
