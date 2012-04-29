@@ -25,6 +25,8 @@ ibus_engine_zhuyin_SOURCES = \
 	main.c \
 	engine.c \
 	engine.h \
+	zhuyin.c \
+	zhuyin.h \
 	$(NULL)
 ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \

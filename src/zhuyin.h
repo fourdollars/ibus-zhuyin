@@ -16,15 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ENGINE_H__
-#define __ENGINE_H__
+#ifndef __ZHUYIN_H__
+#define __ZHUYIN_H__
+__BEGIN_DECLS
 
-#include <ibus.h>
+extern void zhuyin_init(void);
+extern int zhuyin_check(unsigned int);
 
-#define IBUS_TYPE_ZHUYIN_ENGINE	(ibus_zhuyin_engine_get_type ())
-
-GType   ibus_zhuyin_engine_get_type    (void);
-
-#endif
+__END_DECLS
+#endif // __ZHUYIN_H__
 
 /* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */
