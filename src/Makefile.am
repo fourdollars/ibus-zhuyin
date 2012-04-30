@@ -61,4 +61,11 @@ zhuyin.xml: zhuyin.xml.in
 	) > $@
 
 test: ibus-engine-zhuyin
+	$(AM_V_GEN) \
+	( \
+		pid=`pidof ibus-engine-zhuyin`; \
+		if [ -n "$${pid}" ]; then \
+			kill $${pid}; \
+		fi; \
+	)
 	$(builddir)/ibus-engine-zhuyin

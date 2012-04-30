@@ -260,8 +260,8 @@ static void
 ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
 {
     gsize i = 0;
-    g_string_assign (zhuyin->preedit, "");
-    zhuyin->cursor_pos = 0;
+/*    g_string_assign (zhuyin->preedit, "");*/
+/*    zhuyin->cursor_pos = 0;*/
 
     for (i = 0; i < 4; i++) {
         if (display[i] != NULL) {

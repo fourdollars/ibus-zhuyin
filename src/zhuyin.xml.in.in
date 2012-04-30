@@ -2,7 +2,7 @@
 <!-- filename: zhuyin.xml -->
 <component>
 	<name>org.freedesktop.IBus.Zhuyin</name>
-	<description>A real traditional Chinese zhuyin input method.</description>
+	<description>A zhuyin (phonetic) Chinese input method.</description>
 	<exec>${libexecdir}/ibus-engine-zhuyin --ibus</exec>
 	<version>@VERSION@</version>
 	<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
@@ -19,7 +19,7 @@
 			<icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
 			<layout>us</layout>
 			<longname>Zhuyin</longname>
-			<description>A real traditional Chinese zhuyin input method.</description>
+			<description>A zhuyin (phonetic) Chinese input method.</description>
 			<rank>0</rank>
 		</engine>
 	</engines>
