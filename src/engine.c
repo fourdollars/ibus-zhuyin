@@ -27,9 +27,11 @@ struct _IBusZhuyinEngine {
 
     /* members */
     GString *preedit;
+    gint mode;
     gint cursor_pos;
     gchar* display[4];
     gchar input[4];
+    gboolean valid;
     gchar** candidate_member;
     guint candidate_number;
 
@@ -78,6 +80,15 @@ static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
 
+static gboolean ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
+                                           guint             keyval,
+                                           guint             keycode,
+                                           guint             modifiers);
+static gboolean ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
+                                             guint             keyval,
+                                             guint             keycode,
+                                             guint             modifiers);
+
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
 static void
@@ -99,6 +110,7 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 {
     zhuyin->preedit = g_string_new ("");
     zhuyin->cursor_pos = 0;
+    zhuyin->mode = 0;
 
     zhuyin->table = ibus_lookup_table_new (10, 0, TRUE, TRUE);
     g_object_ref_sink (zhuyin->table);
@@ -194,10 +206,7 @@ ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate)
 
     IBusText *ib_text = ibus_lookup_table_get_candidate (zhuyin->table, candidate);
     ibus_zhuyin_engine_commit_string (zhuyin, ib_text->text);
-    g_string_assign (zhuyin->preedit, "");
-    zhuyin->cursor_pos = 0;
-
-    ibus_zhuyin_engine_update (zhuyin);
+    ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
 
     return TRUE;
 }
@@ -232,6 +241,7 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
 
     g_string_assign (zhuyin->preedit, "");
     zhuyin->cursor_pos = 0;
+    zhuyin->mode = 0;
 
     ibus_zhuyin_engine_update (zhuyin);
 }
@@ -256,147 +266,12 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
     ibus_zhuyin_engine_update (zhuyin);
 }
 
-#define is_alpha(c) (((c) >= IBUS_a && (c) <= IBUS_z) || ((c) >= IBUS_A && (c) <= IBUS_Z))
-
-static gboolean 
-ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
-                                       guint       keyval,
-                                       guint       keycode,
-                                       guint       modifiers)
+static gboolean
+ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
+                           guint             keyval,
+                           guint             keycode,
+                           guint             modifiers)
 {
-    IBusText *text;
-    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
-
-    /* Ignore key release event */
-    if (modifiers & IBUS_RELEASE_MASK)
-        return FALSE;
-
-    /* Choose candidate character */
-    if (modifiers & IBUS_SHIFT_MASK) {
-        switch (keyval) {
-            case IBUS_exclam:      // shift + 1
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 0);
-            case IBUS_at:          // shift + 2
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 1);
-            case IBUS_numbersign:  // shift + 3
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 2);
-            case IBUS_dollar:      // shift + 4
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 3);
-            case IBUS_percent:     // shift + 5
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 4);
-            case IBUS_asciicircum: // shift + 6
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 5);
-            case IBUS_ampersand:   // shift + 7
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 6);
-            case IBUS_asterisk:    // shift + 8
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 7);
-            case IBUS_parenleft:   // shift + 9
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 8);
-            case IBUS_parenright:  // shift + 0
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, 9);
-                break;
-            default:break;
-        }
-    }
-
-    modifiers &= (IBUS_CONTROL_MASK | IBUS_MOD1_MASK);
-
-    /* Functional shortcuts */
-    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_s) {
-        ibus_zhuyin_engine_update_lookup_table (zhuyin);
-        return TRUE;
-    }
-
-    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_a) {
-        ibus_engine_show_preedit_text ((IBusEngine *) zhuyin);
-        return TRUE;
-    }
-
-    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_b) {
-        ibus_engine_hide_preedit_text ((IBusEngine *) zhuyin);
-        return TRUE;
-    }
-
-    if (modifiers != 0) {
-        if (zhuyin->preedit->len == 0)
-            return FALSE;
-        else
-            return TRUE;
-    }
-
-
-    switch (keyval) {
-        case IBUS_space:
-            g_string_append (zhuyin->preedit, " ");
-            return ibus_zhuyin_engine_commit_preedit (zhuyin);
-        case IBUS_Return:
-            return ibus_zhuyin_engine_commit_preedit (zhuyin);
-
-        case IBUS_Escape:
-        case IBUS_Delete:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-
-            ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
-            return TRUE;
-
-        case IBUS_Left:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos > 0) {
-                zhuyin->cursor_pos --;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-            return TRUE;
-
-        case IBUS_Right:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos < zhuyin->preedit->len) {
-                zhuyin->cursor_pos ++;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-            return TRUE;
-
-        case IBUS_Up:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos != 0) {
-                zhuyin->cursor_pos = 0;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-            return TRUE;
-
-        case IBUS_Down:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-
-            if (zhuyin->cursor_pos != zhuyin->preedit->len) {
-                zhuyin->cursor_pos = zhuyin->preedit->len;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-
-            return TRUE;
-
-        case IBUS_BackSpace:
-            if (zhuyin->preedit->len == 0) {
-                return FALSE;
-            } else {
-                gsize i = 3;
-                while (i >= 0) {
-                    if (zhuyin->input[i] > 0) {
-                        zhuyin->input[i] = 0;
-                        zhuyin->display[i] = NULL;
-                        break;
-                    }
-                    i--;
-                }
-                ibus_zhuyin_engine_redraw (zhuyin);
-                return TRUE;
-            }
-
-    }
-
     gchar* phonetic = NULL;
     gint   type = 0;
 
@@ -565,6 +440,35 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
             phonetic = "˙";
             type = 4;
             break;
+        case IBUS_space:
+            if (zhuyin->valid == TRUE) {
+                zhuyin->mode = 1;
+                ibus_zhuyin_engine_update_lookup_table (zhuyin);
+                return TRUE;
+            }
+        case IBUS_Escape:
+        case IBUS_Delete:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+
+            ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
+            return TRUE;
+        case IBUS_BackSpace:
+            if (zhuyin->preedit->len == 0) {
+                return FALSE;
+            } else {
+                gsize i = 3;
+                while (i >= 0) {
+                    if (zhuyin->input[i] > 0) {
+                        zhuyin->input[i] = 0;
+                        zhuyin->display[i] = NULL;
+                        break;
+                    }
+                    i--;
+                }
+                ibus_zhuyin_engine_redraw (zhuyin);
+                return TRUE;
+            }
         default:
             break;
     }
@@ -572,8 +476,6 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
     if (type > 0) {
         guint i = 0;
         guint stanza = 0;
-        gchar* old_display = zhuyin->display[type - 1];
-        gchar old_input = zhuyin->input[type - 1];
         zhuyin->display[type - 1] = phonetic;
         zhuyin->input[type - 1] = keyval;
 
@@ -587,11 +489,157 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
         zhuyin->candidate_number = i;
 
         if (zhuyin->candidate_member == NULL) {
-            zhuyin->input[type - 1] = old_input;
-            zhuyin->display[type - 1] = old_display;
+            zhuyin->valid = FALSE;
+        } else {
+            zhuyin->valid = TRUE;
+            ibus_zhuyin_engine_redraw (zhuyin);
+            if (type == 4) {
+                zhuyin->mode = 1;
+                ibus_zhuyin_engine_update_lookup_table (zhuyin);
+            }
         }
+    }
 
-        ibus_zhuyin_engine_redraw (zhuyin);
+    return TRUE;
+}
+
+static gboolean
+ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
+                             guint             keyval,
+                             guint             keycode,
+                             guint             modifiers)
+{
+    /* Choose candidate character */
+    switch (keyval) {
+        case IBUS_1:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 0);
+        case IBUS_2:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 1);
+        case IBUS_3:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 2);
+        case IBUS_4:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 3);
+        case IBUS_5:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 4);
+        case IBUS_6:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 5);
+        case IBUS_7:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 6);
+        case IBUS_8:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 7);
+        case IBUS_9:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 8);
+        case IBUS_0:
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, 9);
+            break;
+        default:break;
+    }
+
+    modifiers &= (IBUS_CONTROL_MASK | IBUS_MOD1_MASK);
+
+    /* Functional shortcuts */
+    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_s) {
+        ibus_zhuyin_engine_update_lookup_table (zhuyin);
+        return TRUE;
+    }
+
+    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_a) {
+        ibus_engine_show_preedit_text ((IBusEngine *) zhuyin);
+        return TRUE;
+    }
+
+    if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_b) {
+        ibus_engine_hide_preedit_text ((IBusEngine *) zhuyin);
+        return TRUE;
+    }
+
+    if (modifiers != 0) {
+        if (zhuyin->preedit->len == 0)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
+
+    switch (keyval) {
+        case IBUS_space:
+            g_string_append (zhuyin->preedit, " ");
+            return ibus_zhuyin_engine_commit_preedit (zhuyin);
+        case IBUS_Return:
+            return ibus_zhuyin_engine_commit_preedit (zhuyin);
+
+        case IBUS_Escape:
+        case IBUS_Delete:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+
+            ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
+            return TRUE;
+
+        case IBUS_Left:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+            if (zhuyin->cursor_pos > 0) {
+                zhuyin->cursor_pos --;
+                ibus_zhuyin_engine_update (zhuyin);
+            }
+            return TRUE;
+
+        case IBUS_Right:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+            if (zhuyin->cursor_pos < zhuyin->preedit->len) {
+                zhuyin->cursor_pos ++;
+                ibus_zhuyin_engine_update (zhuyin);
+            }
+            return TRUE;
+
+        case IBUS_Up:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+            if (zhuyin->cursor_pos != 0) {
+                zhuyin->cursor_pos = 0;
+                ibus_zhuyin_engine_update (zhuyin);
+            }
+            return TRUE;
+
+        case IBUS_Down:
+            if (zhuyin->preedit->len == 0)
+                return FALSE;
+
+            if (zhuyin->cursor_pos != zhuyin->preedit->len) {
+                zhuyin->cursor_pos = zhuyin->preedit->len;
+                ibus_zhuyin_engine_update (zhuyin);
+            }
+
+            return TRUE;
+
+
+    }
+
+    return TRUE;
+}
+
+static gboolean
+ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
+                                       guint       keyval,
+                                       guint       keycode,
+                                       guint       modifiers)
+{
+    IBusText *text;
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+
+    /* Ignore key release event */
+    if (modifiers & IBUS_RELEASE_MASK)
+        return FALSE;
+
+    switch (zhuyin->mode) {
+        case 0:
+            return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+        case 1:
+            return ibus_zhuyin_candidate_phase(zhuyin, keyval, keycode, modifiers);
+        default:
+            break;
     }
     return TRUE;
 }
