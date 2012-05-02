@@ -21,7 +21,7 @@
 __BEGIN_DECLS
 
 extern void zhuyin_init(void);
-extern int zhuyin_check(unsigned int);
+extern gchar** zhuyin_candidate(unsigned int, unsigned int*);
 
 __END_DECLS
 #endif // __ZHUYIN_H__

@@ -57,12 +57,6 @@ PKG_CHECK_MODULES(IBUS, [
     ibus-1.0 >= 1.3.0
 ])
 
-# check enchant
-PKG_CHECK_MODULES(ENCHANT, [
-    enchant
-])
-
-
 # define GETTEXT_* variables
 GETTEXT_PACKAGE="$PACKAGE_NAME"
 AC_SUBST(GETTEXT_PACKAGE)

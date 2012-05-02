@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <enchant.h>
 #include "engine.h"
 #include "zhuyin.h"
 
@@ -75,10 +74,10 @@ static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
 
-static EnchantBroker *broker = NULL;
-static EnchantDict *dict = NULL;
 static gchar* display[4] = {NULL};
 static gchar input[4] = {0};
+static gchar** candidate_member = NULL;
+static guint candidate_number = 0;
 
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
@@ -99,11 +98,6 @@ ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
 static void
 ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 {
-    if (broker == NULL) {
-        broker = enchant_broker_init ();
-        dict = enchant_broker_request_dict (broker, "en");
-    }
-
     zhuyin->preedit = g_string_new ("");
     zhuyin->cursor_pos = 0;
 
@@ -142,12 +136,10 @@ ibus_zhuyin_engine_update_lookup_table (IBusZhuyinEngine *zhuyin)
 
     ibus_lookup_table_clear (zhuyin->table);
     
-    sugs = enchant_dict_suggest (dict,
-                                 zhuyin->preedit->str,
-                                 zhuyin->preedit->len,
-                                 &n_sug);
+    sugs = candidate_member;
+    n_sug = candidate_number;
 
-    if (sugs == NULL || n_sug == 0) {
+    if (sugs == NULL) {
         ibus_engine_hide_lookup_table ((IBusEngine *) zhuyin);
         return;
     }
@@ -157,9 +149,6 @@ ibus_zhuyin_engine_update_lookup_table (IBusZhuyinEngine *zhuyin)
     }
 
     ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
-
-    if (sugs)
-        enchant_dict_free_suggestions (dict, sugs);
 }
 
 static void
@@ -175,7 +164,6 @@ ibus_zhuyin_engine_update_preedit (IBusZhuyinEngine *zhuyin)
                            ibus_attr_underline_new (IBUS_ATTR_UNDERLINE_SINGLE, 0, zhuyin->preedit->len));
 
     if (zhuyin->preedit->len > 0) {
-        retval = enchant_dict_check (dict, zhuyin->preedit->str, zhuyin->preedit->len);
 /*        if (retval != 0) {*/
 /*            ibus_attr_list_append (text->attrs,*/
 /*                               ibus_attr_foreground_new (0xff0000, 0, zhuyin->preedit->len));*/
@@ -260,8 +248,8 @@ static void
 ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
 {
     gsize i = 0;
-/*    g_string_assign (zhuyin->preedit, "");*/
-/*    zhuyin->cursor_pos = 0;*/
+    g_string_assign (zhuyin->preedit, "");
+    zhuyin->cursor_pos = 0;
 
     for (i = 0; i < 4; i++) {
         if (display[i] != NULL) {
@@ -590,8 +578,8 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
     }
 
     if (type > 0) {
+        guint i = 0;
         guint stanza = 0;
-        gsize i = 0;
         gchar* old_display = display[type - 1];
         gchar old_input = input[type - 1];
         display[type - 1] = phonetic;
@@ -603,9 +591,10 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
             }
         }
 
-        i = zhuyin_check(stanza);
+        candidate_member = zhuyin_candidate(stanza, &i);
+        candidate_number = i;
 
-        if (i == -1) {
+        if (candidate_member == NULL) {
             input[type - 1] = old_input;
             display[type - 1] = old_display;
         }

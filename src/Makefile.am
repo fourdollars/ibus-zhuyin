@@ -27,15 +27,14 @@ ibus_engine_zhuyin_SOURCES = \
 	engine.h \
 	zhuyin.c \
 	zhuyin.h \
+	phone.h \
 	$(NULL)
 ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \
-	@ENCHANT_CFLAGS@ \
 	-DPKGDATADIR=\"$(pkgdatadir)\"
 	$(NULL)
 ibus_engine_zhuyin_LDFLAGS = \
 	@IBUS_LIBS@ \
-	@ENCHANT_LIBS@
 	$(NULL)
 
 component_DATA = \
