@@ -28,6 +28,10 @@ struct _IBusZhuyinEngine {
     /* members */
     GString *preedit;
     gint cursor_pos;
+    gchar* display[4];
+    gchar input[4];
+    gchar** candidate_member;
+    guint candidate_number;
 
     IBusLookupTable *table;
 };
@@ -73,11 +77,6 @@ static void ibus_zhuyin_engine_property_hide (IBusEngine             *engine,
 static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
-
-static gchar* display[4] = {NULL};
-static gchar input[4] = {0};
-static gchar** candidate_member = NULL;
-static guint candidate_number = 0;
 
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
@@ -136,8 +135,8 @@ ibus_zhuyin_engine_update_lookup_table (IBusZhuyinEngine *zhuyin)
 
     ibus_lookup_table_clear (zhuyin->table);
     
-    sugs = candidate_member;
-    n_sug = candidate_number;
+    sugs = zhuyin->candidate_member;
+    n_sug = zhuyin->candidate_number;
 
     if (sugs == NULL) {
         ibus_engine_hide_lookup_table ((IBusEngine *) zhuyin);
@@ -163,13 +162,6 @@ ibus_zhuyin_engine_update_preedit (IBusZhuyinEngine *zhuyin)
     ibus_attr_list_append (text->attrs,
                            ibus_attr_underline_new (IBUS_ATTR_UNDERLINE_SINGLE, 0, zhuyin->preedit->len));
 
-    if (zhuyin->preedit->len > 0) {
-/*        if (retval != 0) {*/
-/*            ibus_attr_list_append (text->attrs,*/
-/*                               ibus_attr_foreground_new (0xff0000, 0, zhuyin->preedit->len));*/
-/*        }*/
-    }
-    
     ibus_engine_update_preedit_text ((IBusEngine *)zhuyin,
                                      text,
                                      zhuyin->cursor_pos,
@@ -234,8 +226,8 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
     gsize i = 0;
 
     for (i = 0; i < 4; i++) {
-        input[i] = 0;
-        display[i] = NULL;
+        zhuyin->input[i] = 0;
+        zhuyin->display[i] = NULL;
     }
 
     g_string_assign (zhuyin->preedit, "");
@@ -252,11 +244,11 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
     zhuyin->cursor_pos = 0;
 
     for (i = 0; i < 4; i++) {
-        if (display[i] != NULL) {
+        if (zhuyin->display[i] != NULL) {
             gsize old_len = zhuyin->preedit->len;
             g_string_insert (zhuyin->preedit,
                     zhuyin->cursor_pos,
-                    display[i] );
+                    zhuyin->display[i] );
             zhuyin->cursor_pos += zhuyin->preedit->len - old_len;
         }
     }
@@ -392,9 +384,9 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
             } else {
                 gsize i = 3;
                 while (i >= 0) {
-                    if (input[i] > 0) {
-                        input[i] = 0;
-                        display[i] = NULL;
+                    if (zhuyin->input[i] > 0) {
+                        zhuyin->input[i] = 0;
+                        zhuyin->display[i] = NULL;
                         break;
                     }
                     i--;
@@ -580,23 +572,23 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
     if (type > 0) {
         guint i = 0;
         guint stanza = 0;
-        gchar* old_display = display[type - 1];
-        gchar old_input = input[type - 1];
-        display[type - 1] = phonetic;
-        input[type - 1] = keyval;
+        gchar* old_display = zhuyin->display[type - 1];
+        gchar old_input = zhuyin->input[type - 1];
+        zhuyin->display[type - 1] = phonetic;
+        zhuyin->input[type - 1] = keyval;
 
         for (i = 0; i < 4; i++) {
-            if (input[i] != 0) {
-                stanza = (stanza << 8) | input[i];
+            if (zhuyin->input[i] != 0) {
+                stanza = (stanza << 8) | zhuyin->input[i];
             }
         }
 
-        candidate_member = zhuyin_candidate(stanza, &i);
-        candidate_number = i;
+        zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
+        zhuyin->candidate_number = i;
 
-        if (candidate_member == NULL) {
-            input[type - 1] = old_input;
-            display[type - 1] = old_display;
+        if (zhuyin->candidate_member == NULL) {
+            zhuyin->input[type - 1] = old_input;
+            zhuyin->display[type - 1] = old_display;
         }
 
         ibus_zhuyin_engine_redraw (zhuyin);
