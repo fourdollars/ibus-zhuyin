@@ -189,10 +189,7 @@ ibus_zhuyin_engine_commit_preedit (IBusZhuyinEngine *zhuyin)
         return FALSE;
     
     ibus_zhuyin_engine_commit_string (zhuyin, zhuyin->preedit->str);
-    g_string_assign (zhuyin->preedit, "");
-    zhuyin->cursor_pos = 0;
-
-    ibus_zhuyin_engine_update (zhuyin);
+    ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
 
     return TRUE;
 }
@@ -469,6 +466,8 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                 ibus_zhuyin_engine_redraw (zhuyin);
                 return TRUE;
             }
+        case IBUS_Return:
+            return ibus_zhuyin_engine_commit_preedit (zhuyin);
         default:
             break;
     }
@@ -478,6 +477,8 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         guint stanza = 0;
         zhuyin->display[type - 1] = phonetic;
         zhuyin->input[type - 1] = keyval;
+
+        ibus_zhuyin_engine_redraw (zhuyin);
 
         for (i = 0; i < 4; i++) {
             if (zhuyin->input[i] != 0) {
@@ -492,8 +493,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
             zhuyin->valid = FALSE;
         } else {
             zhuyin->valid = TRUE;
-            ibus_zhuyin_engine_redraw (zhuyin);
-            if (type == 4) {
+            if (zhuyin->display[3] != NULL) {
                 zhuyin->mode = 1;
                 ibus_zhuyin_engine_update_lookup_table (zhuyin);
             }
@@ -614,7 +614,23 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
 
             return TRUE;
 
-
+        case IBUS_BackSpace:
+            zhuyin->mode = 0;
+            if (zhuyin->preedit->len == 0) {
+                return FALSE;
+            } else {
+                gsize i = 3;
+                while (i >= 0) {
+                    if (zhuyin->input[i] > 0) {
+                        zhuyin->input[i] = 0;
+                        zhuyin->display[i] = NULL;
+                        break;
+                    }
+                    i--;
+                }
+                ibus_zhuyin_engine_redraw (zhuyin);
+                return TRUE;
+            }
     }
 
     return TRUE;
