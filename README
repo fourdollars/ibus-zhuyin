@@ -1,6 +1,6 @@
 This project is forked from ibus-tmpl.
 
-ibus-zhuyin - A zhuyin (phonetic) Chinese input method for GNU/Linux.
+ibus-zhuyin - A zhuyin (phonetic) Chinese input method.
 
 Licensed by GPLv3
 
@@ -10,4 +10,4 @@ $ make
 $ sudo make install
 $ ibus-daemon -r -d -x
 
-P.S. It doesn't work yet.
+P.S. It can work but is unstable.
