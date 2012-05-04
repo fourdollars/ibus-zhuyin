@@ -81,6 +81,11 @@ static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
 
+static gboolean ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
+                                               guint             keyval,
+                                               guint             keycode,
+                                               guint             modifiers);
+
 static gboolean ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                                            guint             keyval,
                                            guint             keycode,
@@ -263,6 +268,85 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
     }
 
     ibus_zhuyin_engine_update (zhuyin);
+}
+
+static gboolean
+ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
+                               guint             keyval,
+                               guint             keycode,
+                               guint             modifiers)
+{
+    gchar* punctuation = NULL;
+    switch (keyval) {
+        case '~':
+            punctuation = "～";
+            break;
+        case '!':
+            punctuation = "！";
+            break;
+        case '@':
+            punctuation = "＠";
+            break;
+        case '#':
+            punctuation = "＃";
+            break;
+        case '$':
+            punctuation = "＄";
+            break;
+        case '%':
+            punctuation = "％";
+            break;
+        case '^':
+            punctuation = "︿";
+            break;
+        case '&':
+            punctuation = "＆";
+            break;
+        case '*':
+            punctuation = "＊";
+            break;
+        case '(':
+            punctuation = "（";
+            break;
+        case ')':
+            punctuation = "）";
+            break;
+        case '_':
+            punctuation = "﹍";
+            break;
+        case '+':
+            punctuation = "＋";
+            break;
+        case '{':
+            punctuation = "｛";
+            break;
+        case '}':
+            punctuation = "｝";
+            break;
+        case '|':
+            punctuation = "｜";
+            break;
+        case ':':
+            punctuation = "：";
+            break;
+        case '"':
+            punctuation = "；";
+            break;
+        case '<':
+            punctuation = "，";
+            break;
+        case '>':
+            punctuation = "。";
+            break;
+        case '?':
+            punctuation = "？";
+            break;
+    }
+    if (punctuation != NULL) {
+        ibus_zhuyin_engine_commit_string (zhuyin, punctuation);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 static gboolean
@@ -512,29 +596,53 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
                              guint             modifiers)
 {
     /* Choose candidate character */
+    gint candidate = -1;
     switch (keyval) {
         case IBUS_1:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10);
+        case IBUS_a:
+            candidate = zhuyin->page * 10;
+            break;
         case IBUS_2:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 1);
+        case IBUS_s:
+            candidate = zhuyin->page * 10 + 1;
+            break;
         case IBUS_3:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 2);
+        case IBUS_d:
+            candidate = zhuyin->page * 10 + 2;
+            break;
         case IBUS_4:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 3);
+        case IBUS_f:
+            candidate = zhuyin->page * 10 + 3;
+            break;
         case IBUS_5:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 4);
+        case IBUS_g:
+            candidate = zhuyin->page * 10 + 4;
+            break;
         case IBUS_6:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 5);
+        case IBUS_h:
+            candidate = zhuyin->page * 10 + 5;
+            break;
         case IBUS_7:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 6);
+        case IBUS_j:
+            candidate = zhuyin->page * 10 + 6;
+            break;
         case IBUS_8:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 7);
+        case IBUS_k:
+            candidate = zhuyin->page * 10 + 7;
+            break;
         case IBUS_9:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 8);
+        case IBUS_l:
+            candidate = zhuyin->page * 10 + 8;
+            break;
         case IBUS_0:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 9);
+        case IBUS_semicolon:
+            candidate = zhuyin->page * 10 + 9;
             break;
         default:break;
+    }
+
+    if (candidate != -1 && candidate < zhuyin->candidate_number) {
+        return ibus_zhuyin_engine_commit_candidate (zhuyin, candidate);
     }
 
     modifiers &= (IBUS_CONTROL_MASK | IBUS_MOD1_MASK);
@@ -633,7 +741,13 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
 
     switch (zhuyin->mode) {
         case 0:
-            return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+            if (zhuyin->preedit->len == 0) {
+                if (ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers) == FALSE) {
+                    return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+                }
+            } else {
+                return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+            }
         case 1:
             return ibus_zhuyin_candidate_phase(zhuyin, keyval, keycode, modifiers);
         default:
