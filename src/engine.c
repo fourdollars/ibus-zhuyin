@@ -29,6 +29,7 @@ struct _IBusZhuyinEngine {
     GString *preedit;
     gint mode;
     gint cursor_pos;
+    gint page;
     gchar* display[4];
     gchar input[4];
     gboolean valid;
@@ -239,6 +240,7 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
     g_string_assign (zhuyin->preedit, "");
     zhuyin->cursor_pos = 0;
     zhuyin->mode = 0;
+    zhuyin->page = 0;
 
     ibus_zhuyin_engine_update (zhuyin);
 }
@@ -512,25 +514,25 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
     /* Choose candidate character */
     switch (keyval) {
         case IBUS_1:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 0);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10);
         case IBUS_2:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 1);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 1);
         case IBUS_3:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 2);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 2);
         case IBUS_4:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 3);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 3);
         case IBUS_5:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 4);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 4);
         case IBUS_6:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 5);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 5);
         case IBUS_7:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 6);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 6);
         case IBUS_8:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 7);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 7);
         case IBUS_9:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 8);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 8);
         case IBUS_0:
-            return ibus_zhuyin_engine_commit_candidate (zhuyin, 9);
+            return ibus_zhuyin_engine_commit_candidate (zhuyin, zhuyin->page * 10 + 9);
             break;
         default:break;
     }
@@ -562,9 +564,6 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
 
 
     switch (keyval) {
-        case IBUS_space:
-            g_string_append (zhuyin->preedit, " ");
-            return ibus_zhuyin_engine_commit_preedit (zhuyin);
         case IBUS_Return:
             return ibus_zhuyin_engine_commit_preedit (zhuyin);
 
@@ -577,41 +576,24 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             return TRUE;
 
         case IBUS_Left:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos > 0) {
-                zhuyin->cursor_pos --;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-            return TRUE;
-
-        case IBUS_Right:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos < zhuyin->preedit->len) {
-                zhuyin->cursor_pos ++;
-                ibus_zhuyin_engine_update (zhuyin);
-            }
-            return TRUE;
-
         case IBUS_Up:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-            if (zhuyin->cursor_pos != 0) {
-                zhuyin->cursor_pos = 0;
-                ibus_zhuyin_engine_update (zhuyin);
+            ibus_lookup_table_page_up(zhuyin->table);
+            zhuyin->page--;
+            if (zhuyin->page < 0) {
+                zhuyin->page = (zhuyin->candidate_number + 9) / 10 - 1;
             }
+            ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
             return TRUE;
 
+        case IBUS_space:
+        case IBUS_Right:
         case IBUS_Down:
-            if (zhuyin->preedit->len == 0)
-                return FALSE;
-
-            if (zhuyin->cursor_pos != zhuyin->preedit->len) {
-                zhuyin->cursor_pos = zhuyin->preedit->len;
-                ibus_zhuyin_engine_update (zhuyin);
+            ibus_lookup_table_page_down(zhuyin->table);
+            zhuyin->page++;
+            if (zhuyin->page >= (zhuyin->candidate_number + 9) / 10) {
+                zhuyin->page = 0;
             }
-
+            ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
             return TRUE;
 
         case IBUS_BackSpace:
