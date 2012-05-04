@@ -276,8 +276,14 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
                                guint             keycode,
                                guint             modifiers)
 {
+    static gchar** punctuation_candidate = NULL;
+    gboolean more_punctuation = FALSE;
     gchar* punctuation = NULL;
+
     switch (keyval) {
+        case '`':
+            punctuation = "‘";
+            break;
         case '~':
             punctuation = "～";
             break;
@@ -312,25 +318,51 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
             punctuation = "）";
             break;
         case '_':
-            punctuation = "﹍";
+            punctuation = "－ ＿ ￣";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 3;
             break;
         case '+':
-            punctuation = "＋";
+            punctuation = "＋ ＝";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 2;
+            break;
+        case '[':
+            punctuation = "「";
             break;
         case '{':
-            punctuation = "｛";
+            punctuation = "『 〈 《 ［ ｛ 【 〖 〔 〘 〚";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 10;
+            break;
+        case ']':
+            punctuation = "」";
             break;
         case '}':
-            punctuation = "｝";
+            punctuation = "』 〉 》 ］ ｝ 】 〗 〕 〙 〛";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 10;
+            break;
+        case '\\':
+            punctuation = "＼ ／";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 2;
             break;
         case '|':
             punctuation = "｜";
             break;
         case ':':
-            punctuation = "：";
+            punctuation = "： ；";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 2;
+            break;
+        case '\'':
+            punctuation = "’";
             break;
         case '"':
-            punctuation = "；";
+            punctuation = "、 “ ” ‘ ’";
+            more_punctuation = TRUE;
+            zhuyin->candidate_number = 5;
             break;
         case '<':
             punctuation = "，";
@@ -342,6 +374,20 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
             punctuation = "？";
             break;
     }
+
+    if (more_punctuation == TRUE) {
+        if (punctuation_candidate != NULL) {
+            g_strfreev(punctuation_candidate);
+        }
+        punctuation_candidate = g_strsplit (punctuation, " ", 0);
+        zhuyin->candidate_member = punctuation_candidate;
+        zhuyin->display[0] = punctuation_candidate[0];
+        zhuyin->mode = 1;
+        ibus_zhuyin_engine_redraw (zhuyin);
+        ibus_zhuyin_engine_update_lookup_table (zhuyin);
+        return TRUE;
+    }
+
     if (punctuation != NULL) {
         ibus_zhuyin_engine_commit_string (zhuyin, punctuation);
         return TRUE;
