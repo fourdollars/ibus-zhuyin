@@ -30,6 +30,7 @@ struct _IBusZhuyinEngine {
     gint mode;
     gint cursor_pos;
     gint page;
+    gint page_size;
     gchar* display[4];
     gchar input[4];
     gboolean valid;
@@ -117,8 +118,9 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
     zhuyin->preedit = g_string_new ("");
     zhuyin->cursor_pos = 0;
     zhuyin->mode = 0;
+    zhuyin->page_size = 9;
 
-    zhuyin->table = ibus_lookup_table_new (10, 0, TRUE, TRUE);
+    zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
     g_object_ref_sink (zhuyin->table);
     zhuyin_init();
 }
@@ -802,43 +804,39 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
     switch (keyval) {
         case IBUS_1:
         case IBUS_a:
-            candidate = zhuyin->page * 10;
+            candidate = zhuyin->page * zhuyin->page_size;
             break;
         case IBUS_2:
         case IBUS_s:
-            candidate = zhuyin->page * 10 + 1;
+            candidate = zhuyin->page * zhuyin->page_size + 1;
             break;
         case IBUS_3:
         case IBUS_d:
-            candidate = zhuyin->page * 10 + 2;
+            candidate = zhuyin->page * zhuyin->page_size + 2;
             break;
         case IBUS_4:
         case IBUS_f:
-            candidate = zhuyin->page * 10 + 3;
+            candidate = zhuyin->page * zhuyin->page_size + 3;
             break;
         case IBUS_5:
         case IBUS_g:
-            candidate = zhuyin->page * 10 + 4;
+            candidate = zhuyin->page * zhuyin->page_size + 4;
             break;
         case IBUS_6:
         case IBUS_h:
-            candidate = zhuyin->page * 10 + 5;
+            candidate = zhuyin->page * zhuyin->page_size + 5;
             break;
         case IBUS_7:
         case IBUS_j:
-            candidate = zhuyin->page * 10 + 6;
+            candidate = zhuyin->page * zhuyin->page_size + 6;
             break;
         case IBUS_8:
         case IBUS_k:
-            candidate = zhuyin->page * 10 + 7;
+            candidate = zhuyin->page * zhuyin->page_size + 7;
             break;
         case IBUS_9:
         case IBUS_l:
-            candidate = zhuyin->page * 10 + 8;
-            break;
-        case IBUS_0:
-        case IBUS_semicolon:
-            candidate = zhuyin->page * 10 + 9;
+            candidate = zhuyin->page * zhuyin->page_size + 8;
             break;
         default:break;
     }
@@ -890,7 +888,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             ibus_lookup_table_page_up(zhuyin->table);
             zhuyin->page--;
             if (zhuyin->page < 0) {
-                zhuyin->page = (zhuyin->candidate_number + 9) / 10 - 1;
+                zhuyin->page = (zhuyin->candidate_number + zhuyin->page_size) / (zhuyin->page_size + 1) - 1;
             }
             ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
             return TRUE;
@@ -900,7 +898,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
         case IBUS_Down:
             ibus_lookup_table_page_down(zhuyin->table);
             zhuyin->page++;
-            if (zhuyin->page >= (zhuyin->candidate_number + 9) / 10) {
+            if (zhuyin->page >= (zhuyin->candidate_number + zhuyin->page_size) / (zhuyin->page_size + 1)) {
                 zhuyin->page = 0;
             }
             ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
