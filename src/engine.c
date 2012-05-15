@@ -221,7 +221,6 @@ ibus_zhuyin_engine_commit_string (IBusZhuyinEngine *zhuyin,
     IBusText *text;
     text = ibus_text_new_from_static_string (string);
     ibus_engine_commit_text ((IBusEngine *)zhuyin, text);
-    g_debug("commit %s", text->text);
 }
 
 static void
@@ -246,6 +245,7 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
     zhuyin->cursor_pos = 0;
     zhuyin->mode = 0;
     zhuyin->page = 0;
+    zhuyin->valid = FALSE;
 
     ibus_zhuyin_engine_update (zhuyin);
 }
@@ -630,8 +630,130 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         ibus_zhuyin_engine_redraw (zhuyin);
 
         for (i = 0; i < 4; i++) {
-            if (zhuyin->input[i] != 0) {
-                stanza = (stanza << 8) | zhuyin->input[i];
+            switch (zhuyin->input[i]) {
+                case '1':
+                    stanza = stanza | 1;
+                    break;
+                case 'q':
+                    stanza = stanza | 2;
+                    break;
+                case 'a':
+                    stanza = stanza | 3;
+                    break;
+                case 'z':
+                    stanza = stanza | 4;
+                    break;
+                case '2':
+                    stanza = stanza | 5;
+                    break;
+                case 'w':
+                    stanza = stanza | 6;
+                    break;
+                case 's':
+                    stanza = stanza | 7;
+                    break;
+                case 'x':
+                    stanza = stanza | 8;
+                    break;
+                case 'e':
+                    stanza = stanza | 9;
+                    break;
+                case 'd':
+                    stanza = stanza | 10;
+                    break;
+                case 'c':
+                    stanza = stanza | 11;
+                    break;
+                case 'r':
+                    stanza = stanza | 12;
+                    break;
+                case 'f':
+                    stanza = stanza | 13;
+                    break;
+                case 'v':
+                    stanza = stanza | 14;
+                    break;
+                case '5':
+                    stanza = stanza | 15;
+                    break;
+                case 't':
+                    stanza = stanza | 16;
+                    break;
+                case 'g':
+                    stanza = stanza | 17;
+                    break;
+                case 'b':
+                    stanza = stanza | 18;
+                    break;
+                case 'y':
+                    stanza = stanza | 19;
+                    break;
+                case 'h':
+                    stanza = stanza | 20;
+                    break;
+                case 'n':
+                    stanza = stanza | 21;
+                    break;
+                case 'u':
+                    stanza = stanza | (1 << 8);
+                    break;
+                case 'j':
+                    stanza = stanza | (2 << 8);
+                    break;
+                case 'm':
+                    stanza = stanza | (3 << 8);
+                    break;
+                case '8':
+                    stanza = stanza | (1 << 16);
+                    break;
+                case 'i':
+                    stanza = stanza | (2 << 16);
+                    break;
+                case 'k':
+                    stanza = stanza | (3 << 16);
+                    break;
+                case ',':
+                    stanza = stanza | (4 << 16);
+                    break;
+                case '9':
+                    stanza = stanza | (5 << 16);
+                    break;
+                case 'o':
+                    stanza = stanza | (6 << 16);
+                    break;
+                case 'l':
+                    stanza = stanza | (7 << 16);
+                    break;
+                case '.':
+                    stanza = stanza | (8 << 16);
+                    break;
+                case '0':
+                    stanza = stanza | (9 << 16);
+                    break;
+                case 'p':
+                    stanza = stanza | (10 << 16);
+                    break;
+                case ';':
+                    stanza = stanza | (11 << 16);
+                    break;
+                case '/':
+                    stanza = stanza | (12 << 16);
+                    break;
+                case '-':
+                    stanza = stanza | (13 << 16);
+                    break;
+                case '6':
+                    stanza = stanza | (1 << 24);
+                    break;
+                case '3':
+                    stanza = stanza | (2 << 24);
+                    break;
+                case '4':
+                    stanza = stanza | (3 << 24);
+                    break;
+                case '7':
+                    stanza = stanza | (4 << 24);
+                    break;
             }
         }
 
