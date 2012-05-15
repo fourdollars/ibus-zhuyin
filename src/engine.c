@@ -392,6 +392,7 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
         ibus_zhuyin_engine_commit_string (zhuyin, punctuation);
         return TRUE;
     }
+
     return FALSE;
 }
 
@@ -572,8 +573,24 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         case IBUS_space:
             if (zhuyin->valid == TRUE) {
                 zhuyin->mode = 1;
-                ibus_zhuyin_engine_update_lookup_table (zhuyin);
-                return TRUE;
+                if (zhuyin->candidate_number == 1) {
+                    gsize i = 3;
+                    while (i > 0) {
+                        if (zhuyin->input[i] > 0) {
+                            zhuyin->input[i] = 0;
+                            zhuyin->display[i] = NULL;
+                        }
+                        i--;
+                    }
+                    zhuyin->input[i] = 0;
+                    zhuyin->display[i] = zhuyin->candidate_member[0];
+                    ibus_zhuyin_engine_redraw (zhuyin);
+                    zhuyin->display[i] = NULL;
+                    return ibus_zhuyin_engine_commit_preedit (zhuyin);
+                } else {
+                    ibus_zhuyin_engine_update_lookup_table (zhuyin);
+                    return TRUE;
+                }
             }
         case IBUS_Escape:
         case IBUS_Delete:
@@ -601,7 +618,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         case IBUS_Return:
             return ibus_zhuyin_engine_commit_preedit (zhuyin);
         default:
-            break;
+            return FALSE;
     }
 
     if (type > 0) {
@@ -620,6 +637,23 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
 
         zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
         zhuyin->candidate_number = i;
+
+        /* directly commit when only one candidate. */
+        if (type == 4 && zhuyin->candidate_number == 1) {
+            gsize i = 3;
+            while (i > 0) {
+                if (zhuyin->input[i] > 0) {
+                    zhuyin->input[i] = 0;
+                    zhuyin->display[i] = NULL;
+                }
+                i--;
+            }
+            zhuyin->input[i] = 0;
+            zhuyin->display[i] = zhuyin->candidate_member[0];
+            ibus_zhuyin_engine_redraw (zhuyin);
+            zhuyin->display[i] = NULL;
+            return ibus_zhuyin_engine_commit_preedit (zhuyin);
+        }
 
         if (zhuyin->candidate_member == NULL) {
             zhuyin->valid = FALSE;
