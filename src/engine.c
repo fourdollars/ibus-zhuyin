@@ -120,7 +120,7 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
     zhuyin->mode = 0;
     zhuyin->page_size = 9;
 
-    zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
+    zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, FALSE, TRUE);
     g_object_ref_sink (zhuyin->table);
     zhuyin_init();
 }
