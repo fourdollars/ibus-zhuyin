@@ -24,9 +24,13 @@
 
 void zhuyin_init(void)
 {
-    int i = 0;
-    for (i = 0; i < phone_length; i++) {
-        phone_table[i].candidate.member = g_strsplit(phone_table[i].candidate.string, " ", 0);
+    static int initialized = 0;
+    if (initialized == 0) {
+        int i = 0;
+        for (i = 0; i < phone_length; i++) {
+            phone_table[i].candidate.member = g_strsplit(phone_table[i].candidate.string, " ", 0);
+        }
+        initialized = 1;
     }
 }
 
