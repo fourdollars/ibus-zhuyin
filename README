@@ -5,7 +5,7 @@ ibus-zhuyin - A zhuyin (phonetic) Chinese input method.
 Licensed by GPLv3
 
 $ autoreconf -if
-$ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus-zhuyin
+$ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus-zhuyin CFLAGS=-g CXXFLAGS=-g
 $ make
 $ sudo make install
 $ ibus-daemon -r -d -x
