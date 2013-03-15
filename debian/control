@@ -1,0 +1,18 @@
+Source: ibus-zhuyin
+Section: x11
+Priority: extra
+Maintainer: Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+Build-Depends: debhelper (>= 7.0.50~), autotools-dev, intltool, libgtk2.0-dev, libnotify-dev, libx11-dev, libltdl-dev
+Standards-Version: 3.9.2
+Homepage: http://fourdollars.github.com/ibus-zhuyin/
+Vcs-Browser: https://github.com/fourdollars/ibus-zhuyin
+Vcs-Git: git://github.com/fourdollars/ibus-zhuyin.git
+
+Package: ibus-zhuyin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: IBus Traditional ZhuYin Input Method
+ This traditional Chinese zhuyin input method is designed for the old school style.
+ .
+ There is no intelligent phonetic matching mechanism.
+ You have to select which word you want everytime.
