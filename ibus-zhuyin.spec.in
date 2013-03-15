@@ -4,27 +4,26 @@
 Name:       @PACKAGE_NAME@
 Version:    @PACKAGE_VERSION@
 Release:    1%{?dist}
-Summary:    IBus template project
-License:    GPLv2+
+Summary:    IBus Traditional ZhuYin Input Method
+License:    GPLv3+
 Group:      System Environment/Libraries
-URL:        http://code.google.com/p/ibus/
-Source0:    http://ibus.googlecode.com/files/%{name}-%{version}.tar.gz
+URL:        http://fourdollars.github.com/ibus-zhuyin/
+Source0:    %{name}-%{version}.tar.xz
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires:  gettext-devel
-BuildRequires:  python
 
 Requires:   ibus
-Requires:   python-enchant
 
 %description
-IBus template project.
+This traditional Chinese zhuyin input method is designed for the old school style.
+There is no intelligent phonetic matching mechanism.
+You have to select which word you want everytime.
 
 %prep
 %setup -q
 
 %build
-%configure --disable-static
+%configure --disable-static --libexecdir=%{_libdir}/%{name}
 # make -C po update-gmo
 make %{?_smp_mflags}
 
@@ -32,21 +31,23 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=${RPM_BUILD_ROOT} install
 
-%find_lang %{name}
+#%find_lang %{name}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files -f %{name}.lang
+#%files -f %{name}.lang
+%files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING README
 # %dir %{python_sitearch}/ibus
 # %{python_sitearch}/ibus/*
-%dir %{_datadir}/ibus-zhuyin
-%{_datadir}/ibus-zhuyin
-%{_bindir}/ibus-engine-enchant
-%{_datadir}/ibus/engine/enchant.engine
+%dir %{_datadir}/%{name}
+%{_datadir}/%{name}
+%{_datadir}/ibus/component/zhuyin.xml
+%{_libdir}/%{name}
+
 
 %changelog
-* Wed Jun 25 2008 Peng Huang <shawn.p.huang@gmail.com> - 0.1.0-1
+* Fri Mar 15 2013 Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com> - %{version}
 - The first version.

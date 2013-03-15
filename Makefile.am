@@ -41,7 +41,7 @@ DISTCLEANFILES = \
 	$(NULL)
 
 rpm: dist @PACKAGE_NAME@.spec
-	rpmbuild -bb \
+	rpmbuild -ba \
 			--define "_sourcedir `pwd`" \
 			--define "_builddir `pwd`" \
 			--define "_specdir `pwd`" \
