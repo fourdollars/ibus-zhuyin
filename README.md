@@ -1,4 +1,4 @@
-# IBus traditional zhuyin input method
+# IBus Traditional ZhuYin Input Method
 
 ## Introduction
 
