@@ -32,12 +32,11 @@ m4_define([ibus_version],
 
 AC_INIT([package_name], [ibus_version], [https://github.com/fourdollars/ibus-zhuyin/issues], [package_name])
 AM_MAINTAINER_MODE([enable])
-AM_INIT_AUTOMAKE([1.10])
+AM_INIT_AUTOMAKE([dist-xz no-dist-gzip silent-rules])
 AC_GNU_SOURCE
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # define PACKAGE_VERSION_* variables
 AS_VERSION
