@@ -1,6 +1,3 @@
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
-%define mod_path ibus-@PACKAGE_VERSION_MAJOR@.@PACKAGE_VERSION_MINOR@
 Name:       @PACKAGE_NAME@
 Version:    @PACKAGE_VERSION@
 Release:    1%{?dist}
@@ -10,10 +7,13 @@ Group:      System Environment/Libraries
 URL:        http://fourdollars.github.com/ibus-zhuyin/
 Source0:    %{name}-%{version}.tar.xz
 
-BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires:   ibus-devel
-
-Requires:   ibus
+BuildRoot:        %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRequires:    ibus-devel
+%if 0%{?suse_version}
+BuildRequires:    xz
+%else
+%endif
+Requires:         ibus
 
 %description
 This traditional Chinese zhuyin input method is designed for the old school style.
@@ -41,13 +41,13 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING README
-# %dir %{python_sitearch}/ibus
-# %{python_sitearch}/ibus/*
+%dir %{_datadir}/ibus
+%dir %{_datadir}/ibus/component
 %dir %{_datadir}/%{name}
-%{_datadir}/%{name}
+%dir %{_datadir}/%{name}/icons
+%{_datadir}/%{name}/icons/ibus-zhuyin.png
 %{_datadir}/ibus/component/zhuyin.xml
 %{_libdir}/%{name}
-
 
 %changelog
 * Fri Mar 15 2013 Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com> - %{version}
