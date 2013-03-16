@@ -24,7 +24,11 @@ You have to select which word you want everytime.
 %setup -q
 
 %build
-%configure --disable-static --libexecdir=%{_libdir}/%{name}
+%if 0%{?suse_version}
+%configure --disable-static --libexecdir=%{_libdir}/ibus
+%else
+%configure --disable-static
+%endif
 # make -C po update-gmo
 make %{?_smp_mflags}
 
