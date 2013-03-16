@@ -11,6 +11,7 @@ URL:        http://fourdollars.github.com/ibus-zhuyin/
 Source0:    %{name}-%{version}.tar.xz
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRequires:   ibus-devel
 
 Requires:   ibus
 
