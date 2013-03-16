@@ -99,6 +99,8 @@ int main(int argc, char **argv)
     /* Go */
     init ();
     ibus_main ();
+
+    return 0;
 }
 
 /* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */
