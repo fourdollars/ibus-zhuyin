@@ -19,4 +19,4 @@ ibus-zhuyin - A zhuyin (phonetic) Chinese input method.
 
 Copyright 2012-2013 Shih-Yuan Lee (FourDollars)
 
-Licensed under GPL version 3 or any later version - see [LICENSE](https://raw.github.com/fourdollars/quick/master/LICENSE) file.
+Licensed under GPL version 3 or any later version - see [LICENSE](https://raw.github.com/fourdollars/ibus-zhuyin/master/LICENSE) file.
