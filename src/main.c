@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <config.h>
 #include <ibus.h>
 #include "engine.h"
 
@@ -62,12 +63,12 @@ init (void)
 
         component = ibus_component_new ("org.freedesktop.IBus.Zhuyin",
                                         "Zhuyin",
-                                        "0.0.0",
+                                        PACKAGE_VERSION,
                                         "GPLv3",
                                         "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
                                         "https://github.com/fourdollars/ibus-zhuyin",
                                         "",
-                                        "ibus-zhuyin");
+                                        PACKAGE_NAME);
         ibus_component_add_engine (component,
                                    ibus_engine_desc_new ("zhuyin",
                                                          "Zhuyin",
