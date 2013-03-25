@@ -28,13 +28,13 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="4.4457447"
-     inkscape:cx="-3.7855946"
-     inkscape:cy="24.285714"
+     inkscape:cx="-34.714046"
+     inkscape:cy="49.380741"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1231"
-     inkscape:window-height="776"
+     inkscape:window-width="1631"
+     inkscape:window-height="1026"
      inkscape:window-x="49"
      inkscape:window-y="24"
      inkscape:window-maximized="1" />
@@ -63,7 +63,7 @@
        x="2.249342"
        y="2.5632927"
        transform="translate(0,1004.3622)"
-       ry="8.5474997" />
+       ry="2.9241445" />
     <text
        xml:space="preserve"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -90,13 +90,14 @@
     <text
        xml:space="preserve"
        style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:'文泉驛微米黑';-inkscape-font-specification:'文泉驛微米黑'"
-       x="4.1804256"
-       y="1043.4263"
+       x="4"
+       y="1042.5809"
        id="text2993"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan2995"
-         x="4.1804256"
-         y="1043.4263">ㄅ</tspan></text>
+         x="4"
+         y="1042.5809"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'文泉驛等寬微米黑';-inkscape-font-specification:'文泉驛等寬微米黑'">ㄅ</tspan></text>
   </g>
 </svg>

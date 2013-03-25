@@ -19,12 +19,20 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 icons_DATA = \
+	half.png \
+	full.png \
+	english.png \
+	punctuation.png \
 	ibus-zhuyin.png \
 	$(NULL)
 
 iconsdir = $(pkgdatadir)/icons
 
 EXTRA_DIST = \
+	half.png \
+	full.png \
+	english.png \
+	punctuation.png \
 	ibus-zhuyin.png \
 	ibus-zhuyin.svg \
 	$(NULL)
