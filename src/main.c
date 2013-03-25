@@ -56,17 +56,17 @@ init (void)
     ibus_factory_add_engine (factory, "zhuyin", IBUS_TYPE_ZHUYIN_ENGINE);
 
     if (ibus) {
-        ibus_bus_request_name (bus, "org.freedesktop.IBus.Zhuyin", 0);
+        ibus_bus_request_name (bus, "com.github.fourdollars.ibus-zhuyin", 0);
     }
     else {
         IBusComponent *component;
 
-        component = ibus_component_new ("org.freedesktop.IBus.Zhuyin",
+        component = ibus_component_new ("com.github.fourdollars.ibus-zhuyin",
                                         "Zhuyin",
                                         PACKAGE_VERSION,
                                         "GPLv3",
                                         "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
-                                        "https://github.com/fourdollars/ibus-zhuyin",
+                                        "http://fourdollars.github.com/ibus-zhuyin/",
                                         "",
                                         PACKAGE_NAME);
         ibus_component_add_engine (component,
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     GOptionContext *context;
 
     /* Parse the command line */
-    context = g_option_context_new ("- a zhuyin (phonetic) Chinese input method");
+    context = g_option_context_new ("- a phonetic (Zhuyin/Bopomofo) Chinese input method.");
     g_option_context_add_main_entries (context, entries, "ibus-zhuyin");
 
     if (!g_option_context_parse (context, &argc, &argv, &error)) {
