@@ -1,19 +1,27 @@
-# IBus Traditional ZhuYin Input Method
+# IBus Zhuyin Input Method
 
 ## Introduction
 
-This project is started from [ibus-tmpl](https://github.com/phuang/ibus-tmpl) to develop the zhuyin input method.
-
-ibus-zhuyin - A zhuyin (phonetic) Chinese input method.
+ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method.
 
 ## Installation
 
     $ git clone git://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
     $ ./autogen.sh
-    $ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus-zhuyin CFLAGS=-g CXXFLAGS=-g
+    $ ./configure --prefix=/usr CFLAGS=-g CXXFLAGS=-g
     $ make
     $ sudo make install
     $ ibus-daemon -r -d -x
+
+## Generate Debian source package
+
+    $ git clone git://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
+    $ ./release.sh deb
+
+## Generate RPM source package
+
+    $ git clone git://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
+    $ ./release.sh rpm
 
 ## License
 
