@@ -32,7 +32,9 @@ m4_define([ibus_version],
 
 AC_INIT([package_name], [ibus_version], [https://github.com/fourdollars/ibus-zhuyin/issues], [package_name])
 AM_MAINTAINER_MODE([enable])
-AM_INIT_AUTOMAKE([dist-xz no-dist-gzip silent-rules])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-xz no-dist-gzip silent-rules])
+AM_SILENT_RULES([yes])
 AC_GNU_SOURCE
 
 AC_CONFIG_HEADERS([config.h])
