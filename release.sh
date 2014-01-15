@@ -42,14 +42,14 @@ ENDLINE
     cd ${PACKAGE}-${VERSION}
     case "$(lsb_release -s -i)" in
         (Ubuntu)
-            for series in oneiric precise quantal raring; do
+            for series in precise quantal raring saucy trusty; do
                 sed -i "s/UNRELEASED/$series/g" debian/changelog
                 dpkg-buildpackage -sa -uc -us -S
                 sed -i "s/$series/UNRELEASED/g" debian/changelog
             done
             ;;
         (Debian)
-            for series in oldstable stable testing unstable; do
+            for series in stable testing unstable; do
                 sed -i "s/UNRELEASED/$series/g" debian/changelog
                 dpkg-buildpackage -sa -uc -us -S
                 sed -i "s/$series/UNRELEASED/g" debian/changelog
