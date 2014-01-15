@@ -3,3 +3,6 @@
 
 %:
 	dh  $@
+
+override_dh_strip:
+	dh_strip --dbg-package=ibus-zhuyin-dbg
