@@ -40,7 +40,10 @@ ${PACKAGE} (${VERSION}-0~UNRELEASED1) UNRELEASED; urgency=low
 ENDLINE
 
     cd ${PACKAGE}-${VERSION}
-    case "$(lsb_release -s -i)" in
+    if [ -z "${DIST}" ]; then
+        DIST="$(lsb_release -s -i)"
+    fi
+    case "$DIST" in
         (Ubuntu)
             for series in precise quantal raring saucy trusty; do
                 sed -i "s/UNRELEASED/$series/g" debian/changelog
@@ -54,6 +57,11 @@ ENDLINE
                 dpkg-buildpackage -sa -uc -us -S
                 sed -i "s/$series/UNRELEASED/g" debian/changelog
             done
+            ;;
+        (lintian)
+            sed -i "s/UNRELEASED/unstable/g" debian/changelog
+            debuild -us -uc -tc --lintian-opts --profile debian
+            debuild -S -sa -us -uc --lintian-opts --profile debian
             ;;
         (*)
             debuild -us -uc
