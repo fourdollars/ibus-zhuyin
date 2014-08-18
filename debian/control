@@ -12,7 +12,7 @@ Package: ibus-zhuyin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: IBus Traditional ZhuYin Input Method
- This traditional Chinese zhuyin input method is designed for the old school style.
+ This traditional Chinese zhuyin input method is designed for old school style.
  .
  There is no intelligent phonetic matching mechanism.
  You have to select which word you want everytime.
@@ -21,8 +21,10 @@ Package: ibus-zhuyin-dbg
 Section: debug
 Architecture: any
 Depends: ibus-zhuyin (= ${binary:Version}), ${misc:Depends}
-Description: IBus Traditional ZhuYin Input Method
- This traditional Chinese zhuyin input method is designed for the old school style.
+Description: ibuz-zhuyin -- debugging symbols
+ This traditional Chinese zhuyin input method is designed for old school style.
  .
  There is no intelligent phonetic matching mechanism.
  You have to select which word you want everytime.
+ .
+ This package contains the compiler debug symbols.

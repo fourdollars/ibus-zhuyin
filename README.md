@@ -25,6 +25,6 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method.
 
 ## License
 
-Copyright 2012-2013 Shih-Yuan Lee (FourDollars)
+Copyright 2012-2014 Shih-Yuan Lee (FourDollars)
 
 Licensed under GPL version 3 or any later version - see [LICENSE](https://raw.github.com/fourdollars/ibus-zhuyin/master/LICENSE) file.
