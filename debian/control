@@ -2,8 +2,8 @@ Source: ibus-zhuyin
 Section: x11
 Priority: extra
 Maintainer: Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
-Build-Depends: debhelper (>> 9), autotools-dev, intltool, libibus-1.0-dev
-Standards-Version: 3.9.3
+Build-Depends: debhelper (>= 9), autotools-dev, intltool, libibus-1.0-dev
+Standards-Version: 3.9.5
 Homepage: http://fourdollars.github.io/ibus-zhuyin/
 Vcs-Browser: https://github.com/fourdollars/ibus-zhuyin
 Vcs-Git: git://github.com/fourdollars/ibus-zhuyin.git
