@@ -16,16 +16,26 @@ if [ ! -e Makefile ]; then
     ./configure
 fi
 
+if echo $* | grep deb >/dev/null 2>&1; then
+    DEB=1
+fi
+
+if echo $* | grep rpm >/dev/null 2>&1; then
+    RPM=1
+fi
+
 # Build release tarball
-make distcheck
+if [ -n "$DEB" -o -n "$RPM" ]; then
+    make distcheck
+fi
 
 # Build Source RPM
-if echo $* | grep rpm >/dev/null 2>&1; then
+if [ -n "$RPM" ]; then
     make srpm
 fi
 
 # Build Debian source package
-if echo $* | grep deb >/dev/null 2>&1; then
+if [ -n "$DEB" ]; then
     PACKAGE="$(./configure --version | head -n1 | cut -d ' ' -f 1)"
     VERSION="$(./configure --version | head -n1 | cut -d ' ' -f 3)"
     tar xf ${PACKAGE}-${VERSION}.tar.xz
