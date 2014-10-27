@@ -1,0 +1,4 @@
+# watch control file for uscan
+version=3
+opts="pgpsigurlmangle=s/$/.sig/" \
+  https://github.com/fourdollars/ibus-zhuyin/releases/ .*/ibus-zhuyin-([\d\.]+).tar.xz

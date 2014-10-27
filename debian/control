@@ -1,0 +1,31 @@
+Source: ibus-zhuyin
+Section: x11
+Priority: extra
+Maintainer: IME Packaging Team <pkg-ime-devel@lists.alioth.debian.org>
+Uploaders: Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+Build-Depends: debhelper (>= 9), dh-autoreconf, intltool, libibus-1.0-dev
+Standards-Version: 3.9.5
+Homepage: http://fourdollars.github.io/ibus-zhuyin/
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-ime/ibus-zhuyin.git
+Vcs-Git: git://anonscm.debian.org/pkg-ime/ibus-zhuyin.git
+
+Package: ibus-zhuyin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: IBus Traditional ZhuYin Input Method
+ This traditional Chinese zhuyin input method is designed for old school users.
+ .
+ There is no intelligent phonetic matching mechanism.
+ You have to select which word you want everytime.
+
+Package: ibus-zhuyin-dbg
+Section: debug
+Architecture: any
+Depends: ibus-zhuyin (= ${binary:Version}), ${misc:Depends}
+Description: ibuz-zhuyin -- debugging symbols
+ This traditional Chinese zhuyin input method is designed for old school users.
+ .
+ There is no intelligent phonetic matching mechanism.
+ You have to select which word you want everytime.
+ .
+ This package contains the compiler debug symbols.

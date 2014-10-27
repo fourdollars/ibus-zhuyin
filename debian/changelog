@@ -1,0 +1,5 @@
+ibus-zhuyin (0.1.0-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #758511)
+
+ -- Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>  Mon, 27 Oct 2014 12:20:33 +0800
