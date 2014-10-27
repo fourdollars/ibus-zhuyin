@@ -1,0 +1,28 @@
+<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<!-- filename: zhuyin.xml -->
+<component>
+	<name>com.github.fourdollars.ibus-zhuyin</name>
+	<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
+	<exec>${libexecdir}/ibus-engine-zhuyin --ibus</exec>
+	<version>0.1.0</version>
+	<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+	<license>GPLv3</license>
+	<homepage>http://fourdollars.github.com/ibus-zhuyin/</homepage>
+	<textdomain>ibus-zhuyin</textdomain>
+
+	<engines>
+		<engine>
+			<name>zhuyin</name>
+			<language>zh_TW</language>
+			<license>GPL</license>
+			<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+			<icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
+			<layout>us</layout>
+			<longname>Zhuyin</longname>
+			<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
+			<icon_symbol>ㄅ</icon_symbol>
+			<rank>0</rank>
+		</engine>
+	</engines>
+
+</component>

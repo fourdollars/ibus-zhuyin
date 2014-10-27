@@ -1,0 +1,279 @@
+2014-08-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Initial release of 0.1.0
+
+2014-08-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update the release script.
+
+2014-08-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add the missing dh-autoreconf.
+
+2014-08-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Use COPYING instead of LICENSE.
+
+2014-08-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Switch README and README.md.
+
+2014-08-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	touch ChangeLog in autogen.sh
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Polish release.sh
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Use debhelper with autoreconf.
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update the long description.
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Prepare for Debian ITP and the first release version.
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add lintian build test case.
+
+2014-08-18  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update Debian policy version.
+
+2014-01-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add debug package.
+
+2014-01-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Using '>>' instead of deprecated '>'.
+
+2014-01-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove automake options 'foreign' and '-Werror'.
+
+2014-01-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Depending on debhelper 9 or later.
+
+2013-10-11  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Require gettext 0.18.
+
+2013-10-08  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Modify configure.ac to use AC_CONFIG_AUX_DIR and AM_SILENT_RULES.
+
+2013-03-25  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Polish README.md
+
+2013-03-25  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Adjust the name, description and homepage of ibus-zhuyin.
+
+2013-03-25  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add new icons.
+
+2013-03-25  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add new icon design.
+
+2013-03-23  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Include config.h to set the package version and name.
+
+2013-03-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove the support of lucid, maverick and natty.
+
+2013-03-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add Debian package support.
+
+2013-03-19  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update license information.
+
+2013-03-17  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Follow the convention of Fedora and openSUSE to define the value of libexecdir.
+
+2013-03-16  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Polish release script.
+
+2013-03-16  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Fix the compilation issue on openSUSE 12.1/12.2/12.3
+
+2013-03-16  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Return 0 when the program finished.
+
+2013-03-16  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add srpm rule.
+
+2013-03-16  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Fix the build requires of Fedora.
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add the template for Debian package.
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add a release script for rpm.
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove ChangeLog.
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add a symbolic link README to README.md
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update REAMDE.md
+
+2013-03-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update README and configure.ac
+
+2013-03-13  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Hide the cursor of candidate table.
+
+2013-03-13  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add debug friendly flags to README.
+
+2013-03-12  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Only intialize zhuyin table once.
+
+2012-05-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Change page size to 9.
+
+2012-05-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Change an icon.
+
+2012-05-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Change the mechanism of zhuyin database.
+
+2012-05-15  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Polish the input behavior.
+
+2012-05-04  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add more punctuation support.
+
+2012-05-04  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update README.
+
+2012-05-04  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add some punctuation support.
+
+2012-05-04  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Add page up/down of candidate table.
+
+2012-05-02  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Polish the usability.
+
+2012-05-02  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update README.
+
+2012-05-02  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Choose candidate character
+
+2012-05-02  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Refactor: moving those global variables to member variables.
+
+2012-05-02  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove enchant and enhance zhuyin table.
+
+2012-04-30  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Enhance 'make test' to kill ibus-zhuyin automatically.
+
+2012-04-30  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update the description and license.
+
+2012-04-29  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Implement basic phonetic check.
+
+2012-04-25  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update description.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update license file.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove unneeded file.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update information.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Change icon.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Rename GObject naming for zhuyin engine.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Update README.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove python support.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Rename to 'ibus-zhuyin - Traditional Zhuyin Chinese Input Method'
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove m4/.gitignore and po/.gitignore.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Fix incompatible pointer type.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Move to zh_TW.
+
+2012-04-21  Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>
+
+	Remove .gitignore
