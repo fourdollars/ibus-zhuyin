@@ -30,6 +30,7 @@ struct _IBusZhuyinEngine {
     gint mode;
     gint cursor_pos;
     gint page;
+    gint page_max;
     gint page_size;
     gchar* display[4];
     gchar input[4];
@@ -761,6 +762,10 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
 
         zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
         zhuyin->candidate_number = i;
+        if (zhuyin->candidate_number % zhuyin->page_size)
+            zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
+        else
+            zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
 
         /* directly commit when only one candidate. */
         if (type == 4 && zhuyin->candidate_number == 1) {
@@ -888,7 +893,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             ibus_lookup_table_page_up(zhuyin->table);
             zhuyin->page--;
             if (zhuyin->page < 0) {
-                zhuyin->page = (zhuyin->candidate_number + zhuyin->page_size) / (zhuyin->page_size + 1) - 1;
+                zhuyin->page = zhuyin->page_max;
             }
             ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
             return TRUE;
@@ -898,7 +903,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
         case IBUS_Down:
             ibus_lookup_table_page_down(zhuyin->table);
             zhuyin->page++;
-            if (zhuyin->page >= (zhuyin->candidate_number + zhuyin->page_size) / (zhuyin->page_size + 1)) {
+            if (zhuyin->page > zhuyin->page_max) {
                 zhuyin->page = 0;
             }
             ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
