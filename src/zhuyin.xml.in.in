@@ -20,7 +20,7 @@
 			<layout>us</layout>
 			<longname>Zhuyin</longname>
 			<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
-			<icon_symbol>ㄅ</icon_symbol>
+			<symbol>ㄅ</symbol>
 			<rank>0</rank>
 		</engine>
 	</engines>
