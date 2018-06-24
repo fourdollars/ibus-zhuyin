@@ -16,15 +16,3 @@ Description: IBus Traditional ZhuYin Input Method
  .
  There is no intelligent phonetic matching mechanism.
  You have to select which word you want everytime.
-
-Package: ibus-zhuyin-dbg
-Section: debug
-Architecture: any
-Depends: ibus-zhuyin (= ${binary:Version}), ${misc:Depends}
-Description: ibuz-zhuyin -- debugging symbols
- This traditional Chinese zhuyin input method is designed for old school users.
- .
- There is no intelligent phonetic matching mechanism.
- You have to select which word you want everytime.
- .
- This package contains the compiler debug symbols.
