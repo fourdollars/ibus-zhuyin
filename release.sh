@@ -55,7 +55,7 @@ ENDLINE
     fi
     case "$DIST" in
         (Ubuntu)
-            for series in precise trusty utopic; do
+            for series in trusty xenial bionic; do
                 sed -i "s/UNRELEASED/$series/g" debian/changelog
                 dpkg-buildpackage -sa -uc -us -S
                 sed -i "s/$series/UNRELEASED/g" debian/changelog
