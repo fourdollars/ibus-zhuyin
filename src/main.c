@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <glib/gi18n.h>
+#include <locale.h>
+
 #include <config.h>
 #include <ibus.h>
 #include "engine.h"
@@ -69,15 +72,20 @@ init (void)
                                         "http://fourdollars.github.com/ibus-zhuyin/",
                                         "",
                                         PACKAGE_NAME);
-        ibus_component_add_engine (component,
-                                   ibus_engine_desc_new ("zhuyin",
-                                                         "Zhuyin",
-                                                         "Zhuyin",
-                                                         "zh_TW",
-                                                         "GPLv3",
-                                                         "Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>",
-                                                         PKGDATADIR"/icons/ibus-zhuyin.png",
-                                                         "zh_TW"));
+        IBusEngineDesc *engineDesc =
+            ibus_engine_desc_new_varargs ("name", _("Zhuyin"),
+                                          "longname", _("Zhuyin"),
+                                          "description", _("A phonetic (Zhuyin/Bopomofo) Chinese input method"),
+                                          "language", "zh_TW",
+                                          "license", "GPLv3",
+                                          "author", "Shih-Yuan Lee (FourDollars)",
+                                          "icon", PKGDATADIR"/icons/ibus-zhuyin.png",
+                                          "layout", "us",
+                                          "version", PACKAGE_VERSION,
+                                          "textdomain", PACKAGE_NAME,
+                                          NULL);
+
+        ibus_component_add_engine (component, engineDesc);
         ibus_bus_register_component (bus, component);
     }
 }
@@ -86,6 +94,11 @@ int main(int argc, char **argv)
 {
     GError *error = NULL;
     GOptionContext *context;
+
+    setlocale (LC_ALL, "");
+    bindtextdomain (PACKAGE_NAME, PKGDATADIR "/locale");
+    bind_textdomain_codeset (PACKAGE_NAME, "UTF-8");
+    textdomain (PACKAGE_NAME);
 
     /* Parse the command line */
     context = g_option_context_new ("- a phonetic (Zhuyin/Bopomofo) Chinese input method.");

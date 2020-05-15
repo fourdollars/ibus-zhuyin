@@ -9,7 +9,6 @@
 	<license>GPLv3</license>
 	<homepage>http://fourdollars.github.com/ibus-zhuyin/</homepage>
 	<textdomain>ibus-zhuyin</textdomain>
-
 	<engines>
 		<engine>
 			<name>zhuyin</name>
@@ -18,11 +17,10 @@
 			<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
 			<icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
 			<layout>us</layout>
-			<longname>Zhuyin</longname>
+			<longname>注音</longname>
 			<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
 			<symbol>ㄅ</symbol>
 			<rank>0</rank>
 		</engine>
 	</engines>
-
 </component>

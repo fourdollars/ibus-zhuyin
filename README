@@ -8,7 +8,7 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method.
 
     $ git clone git://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
     $ ./autogen.sh
-    $ ./configure --prefix=/usr CFLAGS=-g CXXFLAGS=-g
+    $ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus CFLAGS=-g CXXFLAGS=-g
     $ make
     $ sudo make install
     $ ibus-daemon -r -d -x
