@@ -1,26 +1,27 @@
 <?xml version=\"1.0\" encoding=\"utf-8\"?>
 <!-- filename: zhuyin.xml -->
 <component>
-	<name>com.github.fourdollars.ibus-zhuyin</name>
-	<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
-	<exec>${libexecdir}/ibus-engine-zhuyin --ibus</exec>
-	<version>@VERSION@</version>
-	<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
-	<license>GPLv3</license>
-	<homepage>http://fourdollars.github.com/ibus-zhuyin/</homepage>
-	<textdomain>ibus-zhuyin</textdomain>
-	<engines>
-		<engine>
-			<name>zhuyin</name>
-			<language>zh_TW</language>
-			<license>GPL</license>
-			<author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
-			<icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
-			<layout>us</layout>
-			<longname>注音</longname>
-			<description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
-			<symbol>ㄅ</symbol>
-			<rank>0</rank>
-		</engine>
-	</engines>
+    <name>com.github.fourdollars.ibus-zhuyin</name>
+    <description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
+    <exec>${libexecdir}/ibus-engine-zhuyin --ibus</exec>
+    <version>@VERSION@</version>
+    <author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+    <license>GPLv3</license>
+    <homepage>https://fourdollars.github.com/ibus-zhuyin/</homepage>
+    <textdomain>@PACKAGE_NAME@</textdomain>
+    <engines>
+        <engine>
+            <name>zhuyin</name>
+            <language>zh_TW</language>
+            <license>GPL</license>
+            <author>Shih-Yuan Lee (FourDollars) &lt;fourdollars@gmail.com&gt;</author>
+            <icon>${pkgdatadir}/icons/ibus-zhuyin.png</icon>
+            <layout>us</layout>
+            <longname>Zhuyin</longname>
+            <description>A phonetic (Zhuyin/Bopomofo) Chinese input method.</description>
+            <symbol>&#x3105;</symbol>
+            <rank>0</rank>
+            <textdomain>@PACKAGE_NAME@</textdomain>
+        </engine>
+    </engines>
 </component>
