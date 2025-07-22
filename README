@@ -13,18 +13,8 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method.
     $ sudo make install
     $ ibus-daemon -r -d -x
 
-## Generate Debian source package
-
-    $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
-    $ ./release.sh deb
-
-## Generate RPM source package
-
-    $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
-    $ ./release.sh rpm
-
 ## License
 
-Copyright 2012-2020 Shih-Yuan Lee (FourDollars)
+Copyright 2012-2025 Shih-Yuan Lee (FourDollars)
 
 Licensed under GPL version 3 or any later version - see [COPYING](https://raw.github.com/fourdollars/ibus-zhuyin/master/COPYING) file.
