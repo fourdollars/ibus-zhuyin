@@ -61,6 +61,14 @@ PKG_CHECK_MODULES(IBUS, [
     ibus-1.0 >= 1.3.0
 ])
 
+# check gtk
+PKG_CHECK_MODULES(GTK, [
+    gtk+-3.0 >= 3.0.0
+])
+
+# check glib
+PKG_CHECK_MODULES(GLIB, [glib-2.0])
+
 # define GETTEXT_* variables
 GETTEXT_PACKAGE="$PACKAGE_NAME"
 AC_SUBST(GETTEXT_PACKAGE)

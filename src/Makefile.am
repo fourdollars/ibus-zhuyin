@@ -31,10 +31,13 @@ ibus_engine_zhuyin_SOURCES = \
 	$(NULL)
 ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \
+	@GTK_CFLAGS@ \
+	@GLIB_CFLAGS@ \
 	-DPKGDATADIR=\"$(pkgdatadir)\"
 	$(NULL)
 ibus_engine_zhuyin_LDFLAGS = \
 	@IBUS_LIBS@ \
+	@GTK_LIBS@ \
 	$(NULL)
 
 component_DATA = \

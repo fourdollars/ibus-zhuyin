@@ -18,6 +18,7 @@
 
 #include <glib/gi18n.h>
 #include <locale.h>
+#include <gtk/gtk.h>
 
 #include <config.h>
 #include <ibus.h>
@@ -94,6 +95,8 @@ int main(int argc, char **argv)
 {
     GError *error = NULL;
     GOptionContext *context;
+
+    gtk_init_check (&argc, &argv);
 
     setlocale (LC_ALL, "");
     bindtextdomain (PACKAGE_NAME, PKGDATADIR "/locale");

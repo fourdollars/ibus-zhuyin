@@ -19,6 +19,13 @@
 #include "engine.h"
 #include "zhuyin.h"
 
+#ifndef G_UNICHAR_MAX_BYTES
+#define G_UNICHAR_MAX_BYTES 6
+#endif
+
+#include <glib.h>
+#include <gtk/gtk.h>
+
 typedef struct _IBusZhuyinEngine IBusZhuyinEngine;
 typedef struct _IBusZhuyinEngineClass IBusZhuyinEngineClass;
 
@@ -43,6 +50,32 @@ struct _IBusZhuyinEngine {
 
 struct _IBusZhuyinEngineClass {
     IBusEngineClass parent;
+};
+
+static GtkWidget *punctuation_window = NULL;
+static IBusEngine *engine_instance = NULL;
+
+// Variables for punctuation window dragging
+static gint punctuation_window_x = -1;
+static gint punctuation_window_y = -1;
+static gboolean punctuation_window_dragging = FALSE;
+static gint punctuation_window_drag_start_x = 0;
+static gint punctuation_window_drag_start_y = 0;
+
+
+// Global Declarations for Punctuation Window
+static const gchar *global_physical_keys[4][14] = {
+    {"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "\\"},
+    {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "<", ">"},
+    {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "{", "}", NULL},
+    {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "\\", "|", "_", "+"}
+};
+
+static const gchar *global_punctuation_keys[4][14] = {
+    {"€", "┌", "┬", "┐", "〝", "〞", "‘", "’", "“", "”", "『", "』", "「", "」"},
+    {"├", "┼", "┤", "※", "〈", "〉", "《", "》", "【", "】", "〔", "〕", "〈", "〉"},
+    {"└", "┴", "┘", "○", "●", "↑", "↓", "！", "：", "；", "、", "｛", "｝", NULL},
+    {"─", "│", "◎", "§", "←", "→", "。", "，", "．", "？", "＼", "｜", "＿", "＋"}
 };
 
 /* functions prototype */
@@ -83,11 +116,6 @@ static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
 
-static gboolean ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
-                                               guint             keyval,
-                                               guint             keycode,
-                                               guint             modifiers);
-
 static gboolean ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                                            guint             keyval,
                                            guint             keycode,
@@ -99,6 +127,191 @@ static gboolean ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
 
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
+static void on_punctuation_button_clicked(GtkButton *button, gpointer user_data) {
+    const gchar *symbol = (const gchar *)user_data;
+    if (engine_instance && symbol) {
+        ibus_engine_commit_text(engine_instance, ibus_text_new_from_string(symbol));
+    }
+    if (punctuation_window) {
+        gtk_widget_hide(punctuation_window);
+    }
+}
+
+static gboolean on_punctuation_window_focus_out(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
+        gtk_widget_hide(punctuation_window);
+    }
+    return TRUE;
+}
+
+static gboolean on_punctuation_window_button_press(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+    if (event->button == 1) { // Left mouse button
+        punctuation_window_dragging = TRUE;
+        punctuation_window_drag_start_x = event->x_root;
+        punctuation_window_drag_start_y = event->y_root;
+        gtk_window_get_position(GTK_WINDOW(widget), &punctuation_window_x, &punctuation_window_y);
+    }
+    return TRUE;
+}
+
+static gboolean on_punctuation_window_motion_notify(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) {
+    if (punctuation_window_dragging) {
+        gint dx = event->x_root - punctuation_window_drag_start_x;
+        gint dy = event->y_root - punctuation_window_drag_start_y;
+        gtk_window_move(GTK_WINDOW(widget), punctuation_window_x + dx, punctuation_window_y + dy);
+    }
+    return TRUE;
+}
+
+static gboolean on_punctuation_window_button_release(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+    if (event->button == 1) { // Left mouse button
+        punctuation_window_dragging = FALSE;
+        // Store the final position
+        gtk_window_get_position(GTK_WINDOW(widget), &punctuation_window_x, &punctuation_window_y);
+    }
+    return TRUE;
+}
+
+static gboolean create_punctuation_window_idle(gpointer user_data) {
+    IBusEngine *engine = (IBusEngine *)user_data;
+    GtkWidget *grid;
+    GtkWidget *button;
+    
+    punctuation_window = gtk_window_new(GTK_WINDOW_POPUP);
+    g_object_add_weak_pointer(G_OBJECT(punctuation_window), (gpointer *)&punctuation_window);
+
+    // Enable motion events
+    gtk_widget_set_events(punctuation_window, gtk_widget_get_events(punctuation_window) | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK);
+
+    // Connect event handlers
+    g_signal_connect(G_OBJECT(punctuation_window), "button-press-event", G_CALLBACK(on_punctuation_window_button_press), NULL);
+    g_signal_connect(G_OBJECT(punctuation_window), "motion-notify-event", G_CALLBACK(on_punctuation_window_motion_notify), NULL);
+    g_signal_connect(G_OBJECT(punctuation_window), "button-release-event", G_CALLBACK(on_punctuation_window_button_release), NULL);
+
+    grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 0);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 0);
+    gtk_container_add(GTK_CONTAINER(punctuation_window), grid);
+
+    for (int i = 0; i < 4; i++) {
+        int max_j = 14; // Default to full row
+        switch (i) {
+            case 1: max_j = 12; break; // For row 1, stop before "<"
+            case 2: max_j = 11; break; // For row 2, stop before "{"
+            case 3: max_j = 10; break; // For row 3, stop before "\"
+        }
+
+        for (int j = 0; j < max_j; j++) {
+            if (global_physical_keys[i][j] != NULL) {
+                GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+                
+                GtkWidget *phys_label = gtk_label_new(NULL);
+                gchar *phys_markup = g_strdup_printf("<span size='x-small' foreground='#888888'>%s</span>", global_physical_keys[i][j]);
+                gtk_label_set_markup(GTK_LABEL(phys_label), phys_markup);
+                g_free(phys_markup);
+                gtk_label_set_xalign(GTK_LABEL(phys_label), 0.0);
+
+                GtkWidget *punc_label = gtk_label_new(NULL);
+                gchar *punc_markup = g_strdup_printf("<span size='xx-large' weight='bold'>%s</span>", global_punctuation_keys[i][j]);
+                gtk_label_set_markup(GTK_LABEL(punc_label), punc_markup);
+                g_free(punc_markup);
+                gtk_label_set_xalign(GTK_LABEL(punc_label), 1.0);
+
+                gtk_box_pack_start(GTK_BOX(vbox), phys_label, TRUE, TRUE, 0);
+                gtk_box_pack_end(GTK_BOX(vbox), punc_label, TRUE, TRUE, 0);
+                
+                button = gtk_button_new();
+                gtk_widget_set_hexpand(button, TRUE);
+                gtk_widget_set_vexpand(button, TRUE);
+                gtk_container_add(GTK_CONTAINER(button), vbox);
+                
+                gint j_offset = 0;
+                if (i > 0) {
+                    j_offset = 1;
+                }
+                
+                g_signal_connect(button, "clicked", G_CALLBACK(on_punctuation_button_clicked), (gpointer)global_punctuation_keys[i][j]);
+                gtk_grid_attach(GTK_GRID(grid), button, j + j_offset, i, 1, 1);
+            }
+        }
+    }
+    gtk_widget_show_all(grid);
+
+    // After creation, show the window
+    if (punctuation_window_x != -1 && punctuation_window_y != -1) {
+        gtk_window_move(GTK_WINDOW(punctuation_window), punctuation_window_x, punctuation_window_y);
+    } else {
+        GdkScreen *screen = gdk_screen_get_default();
+        if (screen) {
+            GdkDisplay *display = gdk_display_get_default();
+            GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+            GdkRectangle geometry;
+            gdk_monitor_get_geometry(monitor, &geometry);
+            gint screen_width = geometry.width;
+            gint screen_height = geometry.height;
+
+            GtkRequisition requisition;
+            gtk_widget_get_preferred_size(punctuation_window, &requisition, NULL);
+
+            gint window_width = requisition.width;
+            gint window_height = requisition.height;
+
+            gint x = screen_width - window_width - 10; // 10 pixels margin from right
+            gint y = screen_height - window_height - 10; // 10 pixels margin from bottom
+
+            gtk_window_move(GTK_WINDOW(punctuation_window), x, y);
+        } else {
+            // Fallback if screen info is not available
+            gtk_window_set_position(GTK_WINDOW(punctuation_window), GTK_WIN_POS_CENTER);
+        }
+    }
+    gtk_widget_show(punctuation_window);
+    
+    return G_SOURCE_REMOVE;
+}
+
+static gboolean show_punctuation_window_idle(gpointer user_data) {
+    if (punctuation_window) {
+        if (punctuation_window_x != -1 && punctuation_window_y != -1) {
+            gtk_window_move(GTK_WINDOW(punctuation_window), punctuation_window_x, punctuation_window_y);
+        } else {
+            GdkScreen *screen = gdk_screen_get_default();
+            if (screen) {
+            GdkDisplay *display = gdk_display_get_default();
+            GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+            GdkRectangle geometry;
+            gdk_monitor_get_geometry(monitor, &geometry);
+            gint screen_width = geometry.width;
+            gint screen_height = geometry.height;
+
+                GtkRequisition requisition;
+                gtk_widget_get_preferred_size(punctuation_window, &requisition, NULL);
+
+                gint window_width = requisition.width;
+                gint window_height = requisition.height;
+
+                gint x = screen_width - window_width - 10; // 10 pixels margin from right
+                gint y = screen_height - window_height - 10; // 10 pixels margin from bottom
+
+                gtk_window_move(GTK_WINDOW(punctuation_window), x, y);
+            } else {
+                // Fallback if screen info is not available
+                gtk_window_set_position(GTK_WINDOW(punctuation_window), GTK_WIN_POS_CENTER);
+            }
+        }
+        gtk_widget_show(punctuation_window);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+static gboolean hide_punctuation_window_idle(gpointer user_data) {
+    if (punctuation_window) {
+        gtk_widget_hide(punctuation_window);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+
 static void
 ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
 {
@@ -108,6 +321,7 @@ ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
     ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_zhuyin_engine_destroy;
 
     engine_class->process_key_event = ibus_zhuyin_engine_process_key_event;
+    engine_class->set_cursor_location = ibus_engine_set_cursor_location;
     engine_class->enable            = ibus_zhuyin_engine_enable;
     engine_class->disable           = ibus_zhuyin_engine_disable;
     engine_class->reset             = ibus_zhuyin_engine_reset;
@@ -116,12 +330,13 @@ ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
 static void
 ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 {
+    engine_instance = (IBusEngine *)zhuyin;
     zhuyin->preedit = g_string_new ("");
     zhuyin->cursor_pos = 0;
     zhuyin->mode = 0;
     zhuyin->page_size = 9;
 
-    zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, FALSE, TRUE);
+    zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, FALSE, FALSE);
     g_object_ref_sink (zhuyin->table);
     zhuyin_init();
 }
@@ -138,6 +353,12 @@ ibus_zhuyin_engine_destroy (IBusZhuyinEngine *zhuyin)
         g_object_unref (zhuyin->table);
         zhuyin->table = NULL;
     }
+    
+    if (punctuation_window) {
+        gtk_widget_destroy(punctuation_window);
+        punctuation_window = NULL;
+    }
+    engine_instance = NULL;
 
     ((IBusObjectClass *) ibus_zhuyin_engine_parent_class)->destroy ((IBusObject *)zhuyin);
 }
@@ -148,11 +369,6 @@ ibus_zhuyin_engine_update_lookup_table (IBusZhuyinEngine *zhuyin)
     gchar ** sugs;
     gsize n_sug, i;
     gboolean retval;
-
-    if (zhuyin->preedit->len == 0) {
-        ibus_engine_hide_lookup_table ((IBusEngine *) zhuyin);
-        return;
-    }
 
     ibus_lookup_table_clear (zhuyin->table);
     
@@ -207,9 +423,6 @@ ibus_zhuyin_engine_commit_preedit (IBusZhuyinEngine *zhuyin)
 static gboolean
 ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate)
 {
-    if (zhuyin->preedit->len == 0)
-        return FALSE;
-
     IBusText *ib_text = ibus_lookup_table_get_candidate (zhuyin->table, candidate);
     ibus_zhuyin_engine_commit_string (zhuyin, ib_text->text);
     ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
@@ -249,6 +462,9 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
     zhuyin->mode = 0;
     zhuyin->page = 0;
     zhuyin->valid = FALSE;
+    if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
+        g_idle_add(hide_punctuation_window_idle, NULL);
+    }
 
     ibus_zhuyin_engine_update (zhuyin);
 }
@@ -261,7 +477,7 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
     zhuyin->cursor_pos = 0;
 
     for (i = 0; i < 4; i++) {
-        if (zhuyin->display[i] != NULL) {
+        if (zhuyin->display[i] != NULL && zhuyin->input[i] > 0) {
             gsize old_len = zhuyin->preedit->len;
             g_string_insert (zhuyin->preedit,
                     zhuyin->cursor_pos,
@@ -769,19 +985,9 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
 
         /* directly commit when only one candidate. */
         if (type == 4 && zhuyin->candidate_number == 1) {
-            gsize i = 3;
-            while (i > 0) {
-                if (zhuyin->input[i] > 0) {
-                    zhuyin->input[i] = 0;
-                    zhuyin->display[i] = NULL;
-                }
-                i--;
-            }
-            zhuyin->input[i] = 0;
-            zhuyin->display[i] = zhuyin->candidate_member[0];
-            ibus_zhuyin_engine_redraw (zhuyin);
-            zhuyin->display[i] = NULL;
-            return ibus_zhuyin_engine_commit_preedit (zhuyin);
+            ibus_zhuyin_engine_commit_string (zhuyin, zhuyin->candidate_member[0]);
+            ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
+            return TRUE;
         }
 
         if (zhuyin->candidate_member == NULL) {
@@ -914,7 +1120,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             if (zhuyin->preedit->len == 0) {
                 return FALSE;
             } else {
-                gsize i = 3;
+                int i = 3;
                 while (i >= 0) {
                     if (zhuyin->input[i] > 0) {
                         zhuyin->input[i] = 0;
@@ -937,22 +1143,76 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
                                        guint       keycode,
                                        guint       modifiers)
 {
-    IBusText *text;
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
 
     /* Ignore key release event */
     if (modifiers & IBUS_RELEASE_MASK)
         return FALSE;
 
+    if ((modifiers & (IBUS_CONTROL_MASK | IBUS_MOD1_MASK)) == (IBUS_CONTROL_MASK | IBUS_MOD1_MASK) && keyval == IBUS_comma) {
+        if (!punctuation_window) {
+            g_idle_add(create_punctuation_window_idle, engine);
+        } else {
+            if (gtk_widget_get_visible(punctuation_window)) {
+                g_idle_add(hide_punctuation_window_idle, NULL);
+            } else {
+                g_idle_add(show_punctuation_window_idle, NULL);
+            }
+        }
+        return TRUE;
+    }
+
+    if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
+        if (keyval == IBUS_Escape) {
+            g_idle_add(hide_punctuation_window_idle, NULL);
+            return TRUE;
+        }
+
+        // Handle key presses in punctuation window
+        gunichar unicode_char = gdk_keyval_to_unicode(keyval);
+        if (unicode_char != 0) { // If it's a printable character
+            gchar char_str[G_UNICHAR_MAX_BYTES + 1];
+            gint len = g_unichar_to_utf8(unicode_char, char_str);
+            char_str[len] = '\0'; // Null-terminate the string
+
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 14; j++) {
+                    if (global_physical_keys[i][j] != NULL &&
+                        strcmp(char_str, global_physical_keys[i][j]) == 0) {
+                        ibus_zhuyin_engine_commit_string(zhuyin, global_punctuation_keys[i][j]);
+                        g_idle_add(hide_punctuation_window_idle, NULL);
+                        return TRUE;
+                    }
+                }
+            }
+            // If no specific mapping is found, commit the character itself
+            ibus_zhuyin_engine_commit_string(zhuyin, char_str);
+            g_idle_add(hide_punctuation_window_idle, NULL);
+            return TRUE;
+        }
+        // If the key was not a printable character or Escape,
+        // it means we don't want to pass it to other phases when punctuation window is open.
+        // So we return TRUE to consume the event.
+        return TRUE;
+    }
+
     switch (zhuyin->mode) {
         case 0:
             if (zhuyin->preedit->len == 0) {
-                if (ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers) == FALSE) {
-                    return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+                if (ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers)) {
+                    return TRUE;
                 }
             } else {
-                return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+                // If preedit is not empty, check if it's a punctuation key.
+                // If it is, commit preedit and re-process.
+                if (keyval == '{' || keyval == '}' || keyval == '\\' ||
+                    keyval == '_' || keyval == '+' || keyval == ':' || keyval == '"') {
+                    ibus_zhuyin_engine_commit_preedit (zhuyin); // This will also reset preedit
+                    // Now, re-call ibus_zhuyin_punctuation_phase with empty preedit
+                    return ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers);
+                }
             }
+            return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
         case 1:
             return ibus_zhuyin_candidate_phase(zhuyin, keyval, keycode, modifiers);
         default:
@@ -964,12 +1224,28 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
 static void ibus_zhuyin_engine_enable (IBusEngine *engine)
 {
     ibus_zhuyin_engine_reset (engine);
+    engine_instance = engine;
 }
 
 static void ibus_zhuyin_engine_disable (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
+        g_idle_add(hide_punctuation_window_idle, NULL);
+    }
     ibus_zhuyin_engine_commit_preedit (zhuyin);
+    engine_instance = NULL;
+}
+
+static void
+ibus_engine_set_cursor_location (IBusEngine *engine,
+                                 gint        x,
+                                 gint        y,
+                                 gint        w,
+                                 gint        h)
+{
+    if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
+    }
 }
 
 /* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */
