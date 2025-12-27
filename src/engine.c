@@ -35,8 +35,6 @@ struct _IBusZhuyinEngine {
     /* members */
     GString *preedit;
     gint mode;
-    gint cursor_pos;
-    gint page;
     gint page_max;
     gint page_size;
     gchar* display[4];
@@ -72,16 +70,16 @@ enum {
 // Global Declarations for Punctuation Window
 static const gchar *global_physical_keys[4][14] = {
     {"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "\\"},
-    {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "<", ">"},
-    {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "{", "}", NULL},
-    {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "\\", "|", "_", "+"}
+    {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]"},
+    {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"},
+    {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"}
 };
 
 static const gchar *global_punctuation_keys[4][14] = {
     {"€", "┌", "┬", "┐", "〝", "〞", "‘", "’", "“", "”", "『", "』", "「", "」"},
-    {"├", "┼", "┤", "※", "〈", "〉", "《", "》", "【", "】", "〔", "〕", "〈", "〉"},
-    {"└", "┴", "┘", "○", "●", "↑", "↓", "！", "：", "；", "、", "｛", "｝", NULL},
-    {"─", "│", "◎", "§", "←", "→", "。", "，", "．", "？", "＼", "｜", "＿", "＋"}
+    {"├", "┼", "┤", "※", "〈", "〉", "《", "》", "【", "】", "〔", "〕"},
+    {"└", "┴", "┘", "○", "●", "↑", "↓", "！", "：", "；", "、"},
+    {"─", "│", "◎", "§", "←", "→", "。", "，", "．", "？"}
 };
 
 /* functions prototype */
@@ -125,6 +123,8 @@ static void ibus_zhuyin_engine_property_hide (IBusEngine             *engine,
 static gboolean ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate);
 static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
                                               const gchar            *string);
+static void ibus_zhuyin_engine_update_aux_text(IBusZhuyinEngine *zhuyin);
+static void _update_lookup_table_and_aux_text(IBusZhuyinEngine *zhuyin);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
 
 static gboolean ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
@@ -327,11 +327,7 @@ ibus_zhuyin_engine_page_down (IBusEngine *engine)
         return;
 
     ibus_lookup_table_page_down(zhuyin->table);
-    zhuyin->page++;
-    if (zhuyin->page > zhuyin->page_max) {
-        zhuyin->page = 0;
-    }
-    ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
+    _update_lookup_table_and_aux_text (zhuyin);
 }
 
 static void
@@ -343,11 +339,28 @@ ibus_zhuyin_engine_page_up (IBusEngine *engine)
         return;
 
     ibus_lookup_table_page_up(zhuyin->table);
-    zhuyin->page--;
-    if (zhuyin->page < 0) {
-        zhuyin->page = zhuyin->page_max;
+    _update_lookup_table_and_aux_text (zhuyin);
+}
+
+static void
+ibus_zhuyin_engine_update_aux_text(IBusZhuyinEngine *zhuyin)
+{
+    if (zhuyin->candidate_number > zhuyin->page_size) {
+        gint pos = ibus_lookup_table_get_cursor_pos(zhuyin->table);
+        gint page = pos / zhuyin->page_size;
+        gchar *page_str = g_strdup_printf("%d / %d", page + 1, zhuyin->page_max + 1);
+        IBusText *text = ibus_text_new_from_string(page_str);
+        ibus_engine_update_auxiliary_text((IBusEngine *)zhuyin, text, TRUE);
+        g_free(page_str);
+    } else {
+        ibus_engine_update_auxiliary_text((IBusEngine *)zhuyin, ibus_text_new_from_string(""), FALSE);
     }
-    ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
+}
+static void
+_update_lookup_table_and_aux_text(IBusZhuyinEngine *zhuyin)
+{
+    ibus_engine_update_lookup_table((IBusEngine *)zhuyin, zhuyin->table, TRUE);
+    ibus_zhuyin_engine_update_aux_text(zhuyin);
 }
 
 static void
@@ -357,18 +370,15 @@ ibus_zhuyin_engine_candidate_clicked (IBusEngine *engine,
                                       guint       state)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
-    gint candidate;
 
     /* We only care about left click */
     if (button != 1)
         return;
 
-    candidate = zhuyin->page * zhuyin->page_size + index;
-
-    if (candidate >= zhuyin->candidate_number)
+    if (index >= zhuyin->candidate_number)
         return;
 
-    ibus_zhuyin_engine_commit_candidate (zhuyin, candidate);
+    ibus_zhuyin_engine_commit_candidate (zhuyin, index);
 }
 
 static void
@@ -379,14 +389,14 @@ ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
 
     ibus_object_class->destroy = (IBusObjectDestroyFunc) ibus_zhuyin_engine_destroy;
 
-    engine_class->process_key_event = ibus_zhuyin_engine_process_key_event;
-    engine_class->candidate_clicked = ibus_zhuyin_engine_candidate_clicked;
-    engine_class->page_up = ibus_zhuyin_engine_page_up;
-    engine_class->page_down = ibus_zhuyin_engine_page_down;
+    engine_class->candidate_clicked   = ibus_zhuyin_engine_candidate_clicked;
+    engine_class->disable             = ibus_zhuyin_engine_disable;
+    engine_class->enable              = ibus_zhuyin_engine_enable;
+    engine_class->page_down           = ibus_zhuyin_engine_page_down;
+    engine_class->page_up             = ibus_zhuyin_engine_page_up;
+    engine_class->process_key_event   = ibus_zhuyin_engine_process_key_event;
+    engine_class->reset               = ibus_zhuyin_engine_reset;
     engine_class->set_cursor_location = ibus_engine_set_cursor_location;
-    engine_class->enable            = ibus_zhuyin_engine_enable;
-    engine_class->disable           = ibus_zhuyin_engine_disable;
-    engine_class->reset             = ibus_zhuyin_engine_reset;
 }
 
 static void
@@ -394,12 +404,12 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 {
     engine_instance = (IBusEngine *)zhuyin;
     zhuyin->preedit = g_string_new ("");
-    zhuyin->cursor_pos = 0;
     zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
     zhuyin->page_size = 9;
     zhuyin->punctuation_candidate = NULL;
 
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
+    ibus_lookup_table_set_orientation(zhuyin->table, IBUS_ORIENTATION_HORIZONTAL);
     g_object_ref_sink (zhuyin->table);
     zhuyin_init();
 }
@@ -452,7 +462,7 @@ ibus_zhuyin_engine_update_lookup_table (IBusZhuyinEngine *zhuyin)
         ibus_lookup_table_append_candidate (zhuyin->table, ibus_text_new_from_string (sugs[i]));
     }
 
-    ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
+    _update_lookup_table_and_aux_text (zhuyin);
 }
 
 static void
@@ -469,7 +479,7 @@ ibus_zhuyin_engine_update_preedit (IBusZhuyinEngine *zhuyin)
 
     ibus_engine_update_preedit_text ((IBusEngine *)zhuyin,
                                      text,
-                                     zhuyin->cursor_pos,
+                                     ibus_lookup_table_get_cursor_pos(zhuyin->table),
                                      TRUE);
 
 }
@@ -526,15 +536,15 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
     }
 
     g_string_assign (zhuyin->preedit, "");
-    zhuyin->cursor_pos = 0;
     zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
-    zhuyin->page = 0;
     zhuyin->valid = FALSE;
+    zhuyin->candidate_number = 0;
     if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
         g_idle_add(hide_punctuation_window_idle, NULL);
     }
 
     ibus_zhuyin_engine_update (zhuyin);
+    ibus_zhuyin_engine_update_aux_text(zhuyin);
 }
 
 static void
@@ -542,15 +552,12 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
 {
     gsize i = 0;
     g_string_assign (zhuyin->preedit, "");
-    zhuyin->cursor_pos = 0;
 
     for (i = 0; i < 4; i++) {
         if (zhuyin->display[i] != NULL && zhuyin->input[i] > 0) {
-            gsize old_len = zhuyin->preedit->len;
             g_string_insert (zhuyin->preedit,
-                    zhuyin->cursor_pos,
+                    zhuyin->preedit->len,
                     zhuyin->display[i] );
-            zhuyin->cursor_pos += zhuyin->preedit->len - old_len;
         }
     }
 
@@ -1074,42 +1081,44 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
 {
     /* Choose candidate character */
     gint candidate = -1;
+    gint index = ibus_lookup_table_get_cursor_pos(zhuyin->table);
+    gint page = index / zhuyin->page_size;
     switch (keyval) {
         case IBUS_1:
         case IBUS_a:
-            candidate = zhuyin->page * zhuyin->page_size;
+            candidate = page * zhuyin->page_size;
             break;
         case IBUS_2:
         case IBUS_s:
-            candidate = zhuyin->page * zhuyin->page_size + 1;
+            candidate = page * zhuyin->page_size + 1;
             break;
         case IBUS_3:
         case IBUS_d:
-            candidate = zhuyin->page * zhuyin->page_size + 2;
+            candidate = page * zhuyin->page_size + 2;
             break;
         case IBUS_4:
         case IBUS_f:
-            candidate = zhuyin->page * zhuyin->page_size + 3;
+            candidate = page * zhuyin->page_size + 3;
             break;
         case IBUS_5:
         case IBUS_g:
-            candidate = zhuyin->page * zhuyin->page_size + 4;
+            candidate = page * zhuyin->page_size + 4;
             break;
         case IBUS_6:
         case IBUS_h:
-            candidate = zhuyin->page * zhuyin->page_size + 5;
+            candidate = page * zhuyin->page_size + 5;
             break;
         case IBUS_7:
         case IBUS_j:
-            candidate = zhuyin->page * zhuyin->page_size + 6;
+            candidate = page * zhuyin->page_size + 6;
             break;
         case IBUS_8:
         case IBUS_k:
-            candidate = zhuyin->page * zhuyin->page_size + 7;
+            candidate = page * zhuyin->page_size + 7;
             break;
         case IBUS_9:
         case IBUS_l:
-            candidate = zhuyin->page * zhuyin->page_size + 8;
+            candidate = page * zhuyin->page_size + 8;
             break;
         default:break;
     }
@@ -1122,7 +1131,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
 
     /* Functional shortcuts */
     if (modifiers == IBUS_CONTROL_MASK && keyval == IBUS_s) {
-        ibus_zhuyin_engine_update_lookup_table (zhuyin);
+        _update_lookup_table_and_aux_text (zhuyin);
         return TRUE;
     }
 
@@ -1143,10 +1152,21 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             return TRUE;
     }
 
+#if IBUS_CHECK_VERSION(1, 5, 0)
+    IBusOrientation orientation = ibus_lookup_table_get_orientation(zhuyin->table);
+#else
+    IBusOrientation orientation = IBUS_ORIENTATION_VERTICAL;
+#endif
 
     switch (keyval) {
-        case IBUS_Return:
+        case IBUS_Return: {
+            gint index = ibus_lookup_table_get_cursor_pos(zhuyin->table);
+            if (index < zhuyin->candidate_number) {
+                return ibus_zhuyin_engine_commit_candidate (zhuyin, index);
+            }
+            /* if no candidate is selected, commit preedit. */
             return ibus_zhuyin_engine_commit_preedit (zhuyin);
+        }
 
         case IBUS_Escape:
         case IBUS_Delete:
@@ -1156,25 +1176,65 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
             return TRUE;
 
-        case IBUS_Left:
         case IBUS_Up:
-            ibus_lookup_table_page_up(zhuyin->table);
-            zhuyin->page--;
-            if (zhuyin->page < 0) {
-                zhuyin->page = zhuyin->page_max;
+            if (orientation == IBUS_ORIENTATION_VERTICAL) {
+                ibus_lookup_table_cursor_up(zhuyin->table);
+            } else { // HORIZONTAL
+                ibus_lookup_table_page_up(zhuyin->table);
             }
-            ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
+            _update_lookup_table_and_aux_text (zhuyin);
             return TRUE;
 
-        case IBUS_space:
-        case IBUS_Right:
         case IBUS_Down:
-            ibus_lookup_table_page_down(zhuyin->table);
-            zhuyin->page++;
-            if (zhuyin->page > zhuyin->page_max) {
-                zhuyin->page = 0;
+            if (orientation == IBUS_ORIENTATION_VERTICAL) {
+                ibus_lookup_table_cursor_down(zhuyin->table);
+            } else { // HORIZONTAL
+                ibus_lookup_table_page_down(zhuyin->table);
             }
-            ibus_engine_update_lookup_table ((IBusEngine *) zhuyin, zhuyin->table, TRUE);
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_Left:
+            if (orientation == IBUS_ORIENTATION_HORIZONTAL) {
+                ibus_lookup_table_cursor_up(zhuyin->table);
+            } else { // VERTICAL
+                ibus_lookup_table_page_up(zhuyin->table);
+            }
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_Right:
+            if (orientation == IBUS_ORIENTATION_HORIZONTAL) {
+                ibus_lookup_table_cursor_down(zhuyin->table);
+            } else { // VERTICAL
+                ibus_lookup_table_page_down(zhuyin->table);
+            }
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_Page_Up:
+            ibus_lookup_table_page_up(zhuyin->table);
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_Page_Down:
+            ibus_lookup_table_page_down(zhuyin->table);
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_Home:
+            ibus_lookup_table_set_cursor_pos(zhuyin->table, 0);
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+
+        case IBUS_End: {
+            ibus_lookup_table_set_cursor_pos(zhuyin->table, zhuyin->candidate_number - 1);
+            _update_lookup_table_and_aux_text (zhuyin);
+            return TRUE;
+        }
+        case IBUS_space:
+            ibus_lookup_table_page_down(zhuyin->table);
+            _update_lookup_table_and_aux_text (zhuyin);
             return TRUE;
 
         case IBUS_BackSpace:
