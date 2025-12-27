@@ -43,6 +43,7 @@ struct _IBusZhuyinEngine {
     gchar input[4];
     gboolean valid;
     gchar** candidate_member;
+    gchar** punctuation_candidate;
     guint candidate_number;
 
     IBusLookupTable *table;
@@ -62,6 +63,11 @@ static gboolean punctuation_window_dragging = FALSE;
 static gint punctuation_window_drag_start_x = 0;
 static gint punctuation_window_drag_start_y = 0;
 
+enum {
+    IBUS_ZHUYIN_MODE_NORMAL,
+    IBUS_ZHUYIN_MODE_CANDIDATE,
+    IBUS_ZHUYIN_MODE_LEADING
+};
 
 // Global Declarations for Punctuation Window
 static const gchar *global_physical_keys[4][14] = {
@@ -124,6 +130,10 @@ static gboolean ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
                                              guint             keyval,
                                              guint             keycode,
                                              guint             modifiers);
+static gboolean ibus_zhuyin_leading_phase (IBusZhuyinEngine *zhuyin,
+                                           guint             keyval,
+                                           guint             keycode,
+                                           guint             modifiers);
 
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
@@ -194,45 +204,36 @@ static gboolean create_punctuation_window_idle(gpointer user_data) {
     gtk_container_add(GTK_CONTAINER(punctuation_window), grid);
 
     for (int i = 0; i < 4; i++) {
-        int max_j = 14; // Default to full row
-        switch (i) {
-            case 1: max_j = 12; break; // For row 1, stop before "<"
-            case 2: max_j = 11; break; // For row 2, stop before "{"
-            case 3: max_j = 10; break; // For row 3, stop before "\"
-        }
+        for (int j = 0; j < 14 && global_physical_keys[i][j] != NULL; j++) {
+            GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+            
+            GtkWidget *phys_label = gtk_label_new(NULL);
+            gchar *phys_markup = g_strdup_printf("<span size='x-small' foreground='#888888'>%s</span>", global_physical_keys[i][j]);
+            gtk_label_set_markup(GTK_LABEL(phys_label), phys_markup);
+            g_free(phys_markup);
+            gtk_label_set_xalign(GTK_LABEL(phys_label), 0.0);
 
-        for (int j = 0; j < max_j; j++) {
-            if (global_physical_keys[i][j] != NULL) {
-                GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-                
-                GtkWidget *phys_label = gtk_label_new(NULL);
-                gchar *phys_markup = g_strdup_printf("<span size='x-small' foreground='#888888'>%s</span>", global_physical_keys[i][j]);
-                gtk_label_set_markup(GTK_LABEL(phys_label), phys_markup);
-                g_free(phys_markup);
-                gtk_label_set_xalign(GTK_LABEL(phys_label), 0.0);
+            GtkWidget *punc_label = gtk_label_new(NULL);
+            gchar *punc_markup = g_strdup_printf("<span size='xx-large' weight='bold'>%s</span>", global_punctuation_keys[i][j]);
+            gtk_label_set_markup(GTK_LABEL(punc_label), punc_markup);
+            g_free(punc_markup);
+            gtk_label_set_xalign(GTK_LABEL(punc_label), 1.0);
 
-                GtkWidget *punc_label = gtk_label_new(NULL);
-                gchar *punc_markup = g_strdup_printf("<span size='xx-large' weight='bold'>%s</span>", global_punctuation_keys[i][j]);
-                gtk_label_set_markup(GTK_LABEL(punc_label), punc_markup);
-                g_free(punc_markup);
-                gtk_label_set_xalign(GTK_LABEL(punc_label), 1.0);
-
-                gtk_box_pack_start(GTK_BOX(vbox), phys_label, TRUE, TRUE, 0);
-                gtk_box_pack_end(GTK_BOX(vbox), punc_label, TRUE, TRUE, 0);
-                
-                button = gtk_button_new();
-                gtk_widget_set_hexpand(button, TRUE);
-                gtk_widget_set_vexpand(button, TRUE);
-                gtk_container_add(GTK_CONTAINER(button), vbox);
-                
-                gint j_offset = 0;
-                if (i > 0) {
-                    j_offset = 1;
-                }
-                
-                g_signal_connect(button, "clicked", G_CALLBACK(on_punctuation_button_clicked), (gpointer)global_punctuation_keys[i][j]);
-                gtk_grid_attach(GTK_GRID(grid), button, j + j_offset, i, 1, 1);
+            gtk_box_pack_start(GTK_BOX(vbox), phys_label, TRUE, TRUE, 0);
+            gtk_box_pack_end(GTK_BOX(vbox), punc_label, TRUE, TRUE, 0);
+            
+            button = gtk_button_new();
+            gtk_widget_set_hexpand(button, TRUE);
+            gtk_widget_set_vexpand(button, TRUE);
+            gtk_container_add(GTK_CONTAINER(button), vbox);
+            
+            gint j_offset = 0;
+            if (i > 0) {
+                j_offset = 1;
             }
+            
+            g_signal_connect(button, "clicked", G_CALLBACK(on_punctuation_button_clicked), (gpointer)global_punctuation_keys[i][j]);
+            gtk_grid_attach(GTK_GRID(grid), button, j + j_offset, i, 1, 1);
         }
     }
     gtk_widget_show_all(grid);
@@ -333,8 +334,9 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
     engine_instance = (IBusEngine *)zhuyin;
     zhuyin->preedit = g_string_new ("");
     zhuyin->cursor_pos = 0;
-    zhuyin->mode = 0;
+    zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
     zhuyin->page_size = 9;
+    zhuyin->punctuation_candidate = NULL;
 
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, FALSE, FALSE);
     g_object_ref_sink (zhuyin->table);
@@ -352,6 +354,11 @@ ibus_zhuyin_engine_destroy (IBusZhuyinEngine *zhuyin)
     if (zhuyin->table) {
         g_object_unref (zhuyin->table);
         zhuyin->table = NULL;
+    }
+
+    if (zhuyin->punctuation_candidate) {
+        g_strfreev (zhuyin->punctuation_candidate);
+        zhuyin->punctuation_candidate = NULL;
     }
     
     if (punctuation_window) {
@@ -459,7 +466,7 @@ ibus_zhuyin_engine_reset (IBusEngine *engine)
 
     g_string_assign (zhuyin->preedit, "");
     zhuyin->cursor_pos = 0;
-    zhuyin->mode = 0;
+    zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
     zhuyin->page = 0;
     zhuyin->valid = FALSE;
     if (punctuation_window && gtk_widget_get_visible(punctuation_window)) {
@@ -495,8 +502,6 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
                                guint             keycode,
                                guint             modifiers)
 {
-    static gchar** punctuation_candidate = NULL;
-    gboolean more_punctuation = FALSE;
     gchar* punctuation = NULL;
 
     switch (keyval) {
@@ -538,50 +543,36 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
             break;
         case '_':
             punctuation = "－ ＿ ￣";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 3;
             break;
         case '+':
             punctuation = "＋ ＝";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 2;
             break;
         case '[':
             punctuation = "「";
             break;
         case '{':
             punctuation = "『 〈 《 ［ ｛ 【 〖 〔 〘 〚";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 10;
             break;
         case ']':
             punctuation = "」";
             break;
         case '}':
             punctuation = "』 〉 》 ］ ｝ 】 〗 〕 〙 〛";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 10;
             break;
         case '\\':
             punctuation = "＼ ／";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 2;
             break;
         case '|':
             punctuation = "｜";
             break;
         case ':':
             punctuation = "： ；";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 2;
             break;
         case '\'':
             punctuation = "’";
             break;
         case '"':
             punctuation = "、 “ ” ‘ ’";
-            more_punctuation = TRUE;
-            zhuyin->candidate_number = 5;
             break;
         case '<':
             punctuation = "，";
@@ -594,25 +585,35 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
             break;
     }
 
-    if (more_punctuation == TRUE) {
-        if (punctuation_candidate != NULL) {
-            g_strfreev(punctuation_candidate);
-        }
-        punctuation_candidate = g_strsplit (punctuation, " ", 0);
-        zhuyin->candidate_member = punctuation_candidate;
-        zhuyin->display[0] = punctuation_candidate[0];
-        zhuyin->mode = 1;
+    if (zhuyin->punctuation_candidate != NULL) {
+        g_strfreev(zhuyin->punctuation_candidate);
+        zhuyin->punctuation_candidate = NULL;
+    }
+
+    if (punctuation == NULL) {
+        return FALSE;
+    }
+
+    zhuyin->punctuation_candidate = g_strsplit (punctuation, " ", 0);
+    zhuyin->candidate_number = g_strv_length (zhuyin->punctuation_candidate);
+    if (zhuyin->candidate_number > 1) {
+        zhuyin->candidate_member = zhuyin->punctuation_candidate;
+        zhuyin->display[0] = zhuyin->punctuation_candidate[0];
+        zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
         ibus_zhuyin_engine_redraw (zhuyin);
         ibus_zhuyin_engine_update_lookup_table (zhuyin);
         return TRUE;
     }
 
-    if (punctuation != NULL) {
-        ibus_zhuyin_engine_commit_string (zhuyin, punctuation);
-        return TRUE;
+    if (zhuyin->punctuation_candidate) {
+        g_strfreev(zhuyin->punctuation_candidate);
+        zhuyin->punctuation_candidate = NULL;
     }
 
-    return FALSE;
+    /* commit the single punctuation */
+    zhuyin->candidate_number = 0;
+    ibus_zhuyin_engine_commit_string (zhuyin, punctuation);
+    return TRUE;
 }
 
 static gboolean
@@ -791,7 +792,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
             break;
         case IBUS_space:
             if (zhuyin->valid == TRUE) {
-                zhuyin->mode = 1;
+                zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
                 if (zhuyin->candidate_number == 1) {
                     gsize i = 3;
                     while (i > 0) {
@@ -995,7 +996,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         } else {
             zhuyin->valid = TRUE;
             if (zhuyin->display[3] != NULL) {
-                zhuyin->mode = 1;
+                zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
                 ibus_zhuyin_engine_update_lookup_table (zhuyin);
             }
         }
@@ -1116,7 +1117,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             return TRUE;
 
         case IBUS_BackSpace:
-            zhuyin->mode = 0;
+            zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
             if (zhuyin->preedit->len == 0) {
                 return FALSE;
             } else {
@@ -1134,6 +1135,127 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             }
     }
 
+    return TRUE;
+}
+
+static gboolean
+ibus_zhuyin_leading_phase (IBusZhuyinEngine *zhuyin,
+                           guint             keyval,
+                           guint             keycode,
+                           guint             modifiers)
+{
+    gchar* punctuation = NULL;
+    switch (keyval) {
+        case IBUS_bracketleft:
+            punctuation = "【 〔 《 〈 ﹙ ﹛ ﹝ 「 『 ︻ ︹ ︷ ︿ ︽ ﹁ ﹃";
+            break;
+        case IBUS_bracketright:
+            punctuation = "】 〕 》 〉 ﹚ ﹜ ﹞ 」 』 ︼ ︺ ︸ ︾ ︼ ﹂ ﹄";
+            break;
+        case IBUS_minus:
+            punctuation = "— … ¯ ￣ ＿ ˍ ˗ ˜ ﹍ ﹎ ﹏";
+            break;
+        case IBUS_equal:
+            punctuation = "＝ ≠ ≒ ≡ ≦ ≧ ≑ ≐ ≣ ∽ ∍ ≍ ≃ ≅";
+            break;
+        case IBUS_apostrophe:
+            punctuation = "‘ ’ “ ” 〝 〞 ‵ ′ 〃";
+            break;
+        case IBUS_comma:
+            punctuation = "， 、 ； ﹐ ¸";
+            break;
+        case IBUS_period:
+            punctuation = "。 ． ‥ ﹒ ‧";
+            break;
+        case IBUS_semicolon:
+            punctuation = "； ： ﹔ ﹕ ︰";
+            break;
+        case IBUS_slash:
+            punctuation = "／ ？ ！ ﹖ ﹗ ⁄";
+            break;
+        case IBUS_backslash:
+            punctuation = "＼ ﹨ ╲ ㇔";
+            break;
+        case IBUS_a:
+            punctuation = "Ａ ａ Ｂ ｂ Ｃ ｃ Ｄ ｄ Ｅ ｅ Ｆ ｆ Ｇ ｇ Ｈ ｈ Ｉ ｉ Ｊ ｊ Ｋ ｋ Ｌ ｌ Ｍ ｍ Ｎ ｎ Ｏ ｏ Ｐ ｐ Ｑ ｑ Ｒ ｒ Ｓ ｓ Ｔ ｔ Ｕ ｕ Ｖ ｖ Ｗ ｗ Ｘ ｘ Ｙ ｙ Ｚ ｚ"; 
+            break;
+        case IBUS_b:
+            punctuation = "┌ ┬ ┐ ├ ┼ ┤ └ ┴ ┘ ─ │ ═ ╞ ╪ ╡ ╔ ╦ ╗ ╠ ╬ ╣ ╚ ╩ ╝ ╒ ╤ ╕ ╘ ╧ ╛";
+            break;
+        case IBUS_m:
+            punctuation = "∀ ∃ ∮ ∵ ∴ ♀ ♂ ⊕ ⊙ ↑ ↓ ← → ↖ ↗ ↙ ↘ ∥ ∣ ／ ＼ ∕ ﹨ √ ∞ ∟ ∠ ∩ ∪ ∫ ∬ ∭ ∮ ∯ ∰ ∱ ∲ ∳";
+            break;
+        case IBUS_u:
+            punctuation = "℃ ℉ ％ ㎎ ㎏ ㎝ ㎜ ㎡ ㎥ ㏄ ㏕ ℡ ‰ ¢ £ ¤ ¥ ฿ ℓ ㏒ ㏑ ㏇ ㏕ ℡";
+            break;
+        case IBUS_n:
+            punctuation = "⓪ ① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⑴ ⑵ ⑶ ⑷ ⑸ ⑹ ⑺ ⑻ ⑼ ⑽ ⑾ ⑿ ⒀ ⒁ ⒂ ⒃ ⒄ ⒅ ⒆ ⒇ ⒈ ⒉ ⒊ ⒋ ⒌ ⒍ ⒎ ⒏ ⒐ ⒑ ⒒ ⒓ ⒔ ⒕ ⒖ ⒗ ⒘ ⒙ ⒚ ⒛ Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ Ⅷ Ⅸ Ⅹ Ⅺ Ⅻ ⅰ ⅱ ⅲ ⅳ ⅴ ⅵ ⅶ ⅷ ⅸ ⅹ ⅺ ⅻ ㊀ ㊁ ㊂ ㊃ ㊄ ㊅ ㊆ ㊇ ㊈ ㊉ ㈠ ㈡ ㈢ ㈣ ㈤ ㈥ ㈦ ㈧ ㈨ ㈩";
+            break;
+        case IBUS_s:
+            punctuation = "★ ▲ ● ◆ ■ ▼ ◀ ▶ ☻ ☎ ♣ ♥ ♠ ♦ ✦ ☀";
+            break;
+        case IBUS_t:
+            punctuation = "㍘ ㏳ ㏠ ㍙ ㍚ ㍛ ㍜ ㍝ ㍞ ㍟ ㍠ ㍡ ㍢ ㍣ ㍤ ㍥ ㍦ ㍧ ㍨ ㍩ ㍪ ㍫ ㍬ ㍭ ㍮ ㍯ ㍰";
+            break;
+        case IBUS_h:
+            punctuation = "☆ △ ○ ◇ □ ▽ ▷ ◁ ☼ ☺ ☏ ♧ ♡ ♤ ♢     ☁ ☂ ☃";
+            break;
+        case IBUS_g:
+            punctuation = "Α α Β β Γ γ Δ δ Ε ε Ζ ζ Η η Θ θ Ι ι Κ κ Λ λ Μ μ Ν ν Ξ ξ Ο ο Π π Ρ ρ Σ σ ς Τ τ Υ υ Φ φ Χ χ Ψ ψ Ω ω";
+            break;
+        case IBUS_p:
+            punctuation = "ㄅ ㄆ ㄇ ㄈ ㄉ ㄊ ㄋ ㄌ ㄍ ㄎ ㄏ ㄐ ㄑ ㄒ ㄓ ㄔ ㄕ ㄖ ㄗ ㄘ ㄙ ㄧ ㄨ ㄩ ㄚ ㄛ ㄜ ㄝ ㄞ ㄟ ㄠ ㄡ ㄢ ㄣ ㄤ ㄥ ㄦ";
+            break;
+        case IBUS_1:
+            punctuation = "！ ﹗ １ 壹 ¹ ₁ 〡";
+            break;
+        case IBUS_2:
+            punctuation = "＠ ２ 貳 ² ₂ 〢";
+            break;
+        case IBUS_3:
+            punctuation = "＃ ３ 參 ³ ₃ 〣";
+            break;
+        case IBUS_4:
+            punctuation = "￥ ＄ ４ 肆 ⁴ ₄ 〤";
+            break;
+        case IBUS_5:
+            punctuation = "％ ５ 伍 ⁵ ₅ 〥";
+            break;
+        case IBUS_6:
+            punctuation = "＾ ６ 陸 ⁶ ₆ 〦";
+            break;
+        case IBUS_7:
+            punctuation = "＆ ７ 柒 ⁷ ₇ 〧";
+            break;
+        case IBUS_8:
+            punctuation = "＊ ８ 捌 ⁸ ₈ 〨";
+            break;
+        case IBUS_9:
+            punctuation = "（ ９ 玖 ⁹ ₉ 〩";
+            break;
+        case IBUS_0:
+            punctuation = "） ０ 零 ⁰ ₀ 〸";
+            break;
+    }
+    if (punctuation == NULL) {
+        zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
+        return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
+    }
+    if (zhuyin->punctuation_candidate != NULL) {
+        g_strfreev(zhuyin->punctuation_candidate);
+        zhuyin->punctuation_candidate = NULL;
+    }
+    zhuyin->punctuation_candidate = g_strsplit (punctuation, " ", 0);
+    zhuyin->candidate_number = g_strv_length (zhuyin->punctuation_candidate);
+    if (zhuyin->candidate_number % zhuyin->page_size)
+        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
+    else
+        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+    zhuyin->candidate_member = zhuyin->punctuation_candidate;
+    zhuyin->display[0] = zhuyin->punctuation_candidate[0];
+    zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
+    ibus_zhuyin_engine_redraw (zhuyin);
+    ibus_zhuyin_engine_update_lookup_table (zhuyin);
     return TRUE;
 }
 
@@ -1185,6 +1307,7 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
                     }
                 }
             }
+
             // If no specific mapping is found, commit the character itself
             ibus_zhuyin_engine_commit_string(zhuyin, char_str);
             g_idle_add(hide_punctuation_window_idle, NULL);
@@ -1197,8 +1320,13 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
     }
 
     switch (zhuyin->mode) {
-        case 0:
+        case IBUS_ZHUYIN_MODE_NORMAL:
             if (zhuyin->preedit->len == 0) {
+                // Ctrl + `
+                if ((modifiers & IBUS_CONTROL_MASK) == IBUS_CONTROL_MASK && keyval == IBUS_grave) {
+                    zhuyin->mode = IBUS_ZHUYIN_MODE_LEADING;
+                    return TRUE;
+                }
                 if (ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers)) {
                     return TRUE;
                 }
@@ -1213,8 +1341,10 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
                 }
             }
             return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
-        case 1:
+        case IBUS_ZHUYIN_MODE_CANDIDATE:
             return ibus_zhuyin_candidate_phase(zhuyin, keyval, keycode, modifiers);
+        case IBUS_ZHUYIN_MODE_LEADING:
+            return ibus_zhuyin_leading_phase(zhuyin, keyval, keycode, modifiers);
         default:
             break;
     }
