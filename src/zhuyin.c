@@ -22,15 +22,12 @@
 #include "zhuyin.h"
 #include "phone.h"
 
+static guchar *initialized_flags = NULL;
+
 void zhuyin_init(void)
 {
-    static int initialized = 0;
-    if (initialized == 0) {
-        int i = 0;
-        for (i = 0; i < phone_length; i++) {
-            phone_table[i].candidate.member = g_strsplit(phone_table[i].candidate.string, " ", 0);
-        }
-        initialized = 1;
+    if (initialized_flags == NULL) {
+        initialized_flags = g_new0(guchar, phone_length);
     }
 }
 
@@ -38,6 +35,10 @@ gchar** zhuyin_candidate(unsigned int index, unsigned int* number)
 {
     int low = 0;
     int high = phone_length - 1;
+
+    if (G_UNLIKELY(initialized_flags == NULL)) {
+        zhuyin_init();
+    }
 
     while (low <= high) {
         int mid = (low + high) / 2;
@@ -48,6 +49,12 @@ gchar** zhuyin_candidate(unsigned int index, unsigned int* number)
         } else {
             if (number != NULL) {
                 *number = phone_table[mid].number;
+            }
+
+            if (initialized_flags[mid] == 0) {
+                const gchar *raw = phone_table[mid].candidate.string;
+                phone_table[mid].candidate.member = g_strsplit(raw, " ", 0);
+                initialized_flags[mid] = 1;
             }
             return phone_table[mid].candidate.member;
         }

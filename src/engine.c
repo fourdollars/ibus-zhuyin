@@ -91,8 +91,6 @@ static gboolean ibus_zhuyin_engine_process_key_event
                                              guint                  keyval,
                                              guint                  keycode,
                                              guint                  modifiers);
-static void ibus_zhuyin_engine_focus_in    (IBusEngine             *engine);
-static void ibus_zhuyin_engine_focus_out   (IBusEngine             *engine);
 static void ibus_zhuyin_engine_reset       (IBusEngine             *engine);
 static void ibus_zhuyin_engine_enable      (IBusEngine             *engine);
 static void ibus_zhuyin_engine_disable     (IBusEngine             *engine);
@@ -101,24 +99,12 @@ static void ibus_engine_set_cursor_location (IBusEngine             *engine,
                                              gint                    y,
                                              gint                    w,
                                              gint                    h);
-static void ibus_zhuyin_engine_set_capabilities
-                                            (IBusEngine             *engine,
-                                             guint                   caps);
 static void ibus_zhuyin_engine_page_up     (IBusEngine             *engine);
 static void ibus_zhuyin_engine_page_down   (IBusEngine             *engine);
-static void ibus_zhuyin_engine_cursor_up   (IBusEngine             *engine);
-static void ibus_zhuyin_engine_cursor_down   (IBusEngine             *engine);
 static void ibus_zhuyin_engine_candidate_clicked (IBusEngine             *engine,
                                              guint                   index,
                                              guint                   button,
                                              guint                   state);
-static void ibus_zhuyin_property_activate  (IBusEngine             *engine,
-                                            const gchar            *prop_name,
-                                            gint                    prop_state);
-static void ibus_zhuyin_engine_property_show (IBusEngine             *engine,
-                                              const gchar            *prop_name);
-static void ibus_zhuyin_engine_property_hide (IBusEngine             *engine,
-                                              const gchar            *prop_name);
 
 static gboolean ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate);
 static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
