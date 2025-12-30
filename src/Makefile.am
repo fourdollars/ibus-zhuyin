@@ -19,6 +19,8 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
+AM_CPPFLAGS = -I$(top_srcdir)/include
+
 libexec_PROGRAMS = ibus-engine-zhuyin
 
 ibus_engine_zhuyin_SOURCES = \
@@ -28,6 +30,7 @@ ibus_engine_zhuyin_SOURCES = \
 	zhuyin.c \
 	zhuyin.h \
 	phone.h \
+	punctuation.h \
 	$(NULL)
 ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \
