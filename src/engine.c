@@ -18,6 +18,7 @@
 
 #include "engine.h"
 #include "zhuyin.h"
+#include "punctuation.h"
 
 #ifndef G_UNICHAR_MAX_BYTES
 #define G_UNICHAR_MAX_BYTES 6
@@ -1252,98 +1253,14 @@ ibus_zhuyin_leading_phase (IBusZhuyinEngine *zhuyin,
                            guint             modifiers)
 {
     gchar* punctuation = NULL;
-    switch (keyval) {
-        case IBUS_bracketleft:
-            punctuation = "【 〔 《 〈 ﹙ ﹛ ﹝ 「 『 ︻ ︹ ︷ ︿ ︽ ﹁ ﹃";
+    int i;
+    for (i = 0; leading_key_punctuation[i].candidates != NULL; i++) {
+        if (leading_key_punctuation[i].keyval == keyval) {
+            punctuation = (gchar*)leading_key_punctuation[i].candidates;
             break;
-        case IBUS_bracketright:
-            punctuation = "】 〕 》 〉 ﹚ ﹜ ﹞ 」 』 ︼ ︺ ︸ ︾ ︼ ﹂ ﹄";
-            break;
-        case IBUS_minus:
-            punctuation = "— … ¯ ￣ ＿ ˍ ˗ ˜ ﹍ ﹎ ﹏";
-            break;
-        case IBUS_equal:
-            punctuation = "＝ ≠ ≒ ≡ ≦ ≧ ≑ ≐ ≣ ∽ ∍ ≍ ≃ ≅";
-            break;
-        case IBUS_apostrophe:
-            punctuation = "‘ ’ “ ” 〝 〞 ‵ ′ 〃";
-            break;
-        case IBUS_comma:
-            punctuation = "， 、 ； ﹐ ¸";
-            break;
-        case IBUS_period:
-            punctuation = "。 ． ‥ ﹒ ‧";
-            break;
-        case IBUS_semicolon:
-            punctuation = "； ： ﹔ ﹕ ︰";
-            break;
-        case IBUS_slash:
-            punctuation = "／ ？ ！ ﹖ ﹗ ⁄";
-            break;
-        case IBUS_backslash:
-            punctuation = "＼ ﹨ ╲ ㇔";
-            break;
-        case IBUS_a:
-            punctuation = "Ａ ａ Ｂ ｂ Ｃ ｃ Ｄ ｄ Ｅ ｅ Ｆ ｆ Ｇ ｇ Ｈ ｈ Ｉ ｉ Ｊ ｊ Ｋ ｋ Ｌ ｌ Ｍ ｍ Ｎ ｎ Ｏ ｏ Ｐ ｐ Ｑ ｑ Ｒ ｒ Ｓ ｓ Ｔ ｔ Ｕ ｕ Ｖ ｖ Ｗ ｗ Ｘ ｘ Ｙ ｙ Ｚ ｚ"; 
-            break;
-        case IBUS_b:
-            punctuation = "┌ ┬ ┐ ├ ┼ ┤ └ ┴ ┘ ─ │ ═ ╞ ╪ ╡ ╔ ╦ ╗ ╠ ╬ ╣ ╚ ╩ ╝ ╒ ╤ ╕ ╘ ╧ ╛";
-            break;
-        case IBUS_m:
-            punctuation = "∀ ∃ ∮ ∵ ∴ ♀ ♂ ⊕ ⊙ ↑ ↓ ← → ↖ ↗ ↙ ↘ ∥ ∣ ／ ＼ ∕ ﹨ √ ∞ ∟ ∠ ∩ ∪ ∫ ∬ ∭ ∮ ∯ ∰ ∱ ∲ ∳";
-            break;
-        case IBUS_u:
-            punctuation = "℃ ℉ ％ ㎎ ㎏ ㎝ ㎜ ㎡ ㎥ ㏄ ㏕ ℡ ‰ ¢ £ ¤ ¥ ฿ ℓ ㏒ ㏑ ㏇ ㏕ ℡";
-            break;
-        case IBUS_n:
-            punctuation = "⓪ ① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⑴ ⑵ ⑶ ⑷ ⑸ ⑹ ⑺ ⑻ ⑼ ⑽ ⑾ ⑿ ⒀ ⒁ ⒂ ⒃ ⒄ ⒅ ⒆ ⒇ ⒈ ⒉ ⒊ ⒋ ⒌ ⒍ ⒎ ⒏ ⒐ ⒑ ⒒ ⒓ ⒔ ⒕ ⒖ ⒗ ⒘ ⒙ ⒚ ⒛ Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ Ⅷ Ⅸ Ⅹ Ⅺ Ⅻ ⅰ ⅱ ⅲ ⅳ ⅴ ⅵ ⅶ ⅷ ⅸ ⅹ ⅺ ⅻ ㊀ ㊁ ㊂ ㊃ ㊄ ㊅ ㊆ ㊇ ㊈ ㊉ ㈠ ㈡ ㈢ ㈣ ㈤ ㈥ ㈦ ㈧ ㈨ ㈩";
-            break;
-        case IBUS_s:
-            punctuation = "★ ▲ ● ◆ ■ ▼ ◀ ▶ ☻ ☎ ♣ ♥ ♠ ♦ ✦ ☀";
-            break;
-        case IBUS_t:
-            punctuation = "㍘ ㏳ ㏠ ㍙ ㍚ ㍛ ㍜ ㍝ ㍞ ㍟ ㍠ ㍡ ㍢ ㍣ ㍤ ㍥ ㍦ ㍧ ㍨ ㍩ ㍪ ㍫ ㍬ ㍭ ㍮ ㍯ ㍰";
-            break;
-        case IBUS_h:
-            punctuation = "☆ △ ○ ◇ □ ▽ ▷ ◁ ☼ ☺ ☏ ♧ ♡ ♤ ♢ ✧ ☁ ☂ ☃";
-            break;
-        case IBUS_g:
-            punctuation = "Α α Β β Γ γ Δ δ Ε ε Ζ ζ Η η Θ θ Ι ι Κ κ Λ λ Μ μ Ν ν Ξ ξ Ο ο Π π Ρ ρ Σ σ ς Τ τ Υ υ Φ φ Χ χ Ψ ψ Ω ω";
-            break;
-        case IBUS_p:
-            punctuation = "ㄅ ㄆ ㄇ ㄈ ㄉ ㄊ ㄋ ㄌ ㄍ ㄎ ㄏ ㄐ ㄑ ㄒ ㄓ ㄔ ㄕ ㄖ ㄗ ㄘ ㄙ ㄧ ㄨ ㄩ ㄚ ㄛ ㄜ ㄝ ㄞ ㄟ ㄠ ㄡ ㄢ ㄣ ㄤ ㄥ ㄦ";
-            break;
-        case IBUS_1:
-            punctuation = "！ ﹗ １ 壹 ¹ ₁ 〡";
-            break;
-        case IBUS_2:
-            punctuation = "＠ ２ 貳 ² ₂ 〢";
-            break;
-        case IBUS_3:
-            punctuation = "＃ ３ 參 ³ ₃ 〣";
-            break;
-        case IBUS_4:
-            punctuation = "￥ ＄ ４ 肆 ⁴ ₄ 〤";
-            break;
-        case IBUS_5:
-            punctuation = "％ ５ 伍 ⁵ ₅ 〥";
-            break;
-        case IBUS_6:
-            punctuation = "＾ ６ 陸 ⁶ ₆ 〦";
-            break;
-        case IBUS_7:
-            punctuation = "＆ ７ 柒 ⁷ ₇ 〧";
-            break;
-        case IBUS_8:
-            punctuation = "＊ ８ 捌 ⁸ ₈ 〨";
-            break;
-        case IBUS_9:
-            punctuation = "（ ９ 玖 ⁹ ₉ 〩";
-            break;
-        case IBUS_0:
-            punctuation = "） ０ 零 ⁰ ₀ 〸";
-            break;
+        }
     }
+
     if (punctuation == NULL) {
         zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
         return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
