@@ -489,6 +489,10 @@ static gboolean
 ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate)
 {
     IBusText *ib_text = ibus_lookup_table_get_candidate (zhuyin->table, candidate);
+
+    if (ib_text == NULL)
+        return FALSE;
+
     ibus_zhuyin_engine_commit_string (zhuyin, ib_text->text);
     ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
 
