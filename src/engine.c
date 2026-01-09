@@ -458,7 +458,7 @@ ibus_zhuyin_engine_update_preedit (IBusZhuyinEngine *zhuyin)
     IBusText *text;
     gint retval;
 
-    text = ibus_text_new_from_static_string (zhuyin->preedit->str);
+    text = ibus_text_new_from_string (zhuyin->preedit->str);
     text->attrs = ibus_attr_list_new ();
     
     ibus_attr_list_append (text->attrs,
@@ -504,7 +504,7 @@ ibus_zhuyin_engine_commit_string (IBusZhuyinEngine *zhuyin,
                                    const gchar       *string)
 {
     IBusText *text;
-    text = ibus_text_new_from_static_string (string);
+    text = ibus_text_new_from_string (string);
     ibus_engine_commit_text ((IBusEngine *)zhuyin, text);
 }
 
@@ -882,7 +882,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
             if (zhuyin->preedit->len == 0) {
                 return FALSE;
             } else {
-                gsize i = 3;
+                gint i = 3;
                 while (i >= 0) {
                     if (zhuyin->input[i] > 0) {
                         zhuyin->input[i] = 0;
@@ -1233,7 +1233,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
             if (zhuyin->preedit->len == 0) {
                 return FALSE;
             } else {
-                int i = 3;
+                gint i = 3;
                 while (i >= 0) {
                     if (zhuyin->input[i] > 0) {
                         zhuyin->input[i] = 0;
