@@ -85,6 +85,7 @@ src/Makefile
 src/zhuyin.xml.in
 icons/Makefile
 m4/Makefile
+tests/Makefile
 )
 
 AC_OUTPUT

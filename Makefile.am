@@ -23,6 +23,7 @@ SUBDIRS = \
 	icons \
 	m4 \
 	po \
+	tests \
 	$(NULL)
 
 ACLOCAL_AMFLAGS = -I m4

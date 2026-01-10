@@ -853,7 +853,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
             if (zhuyin->valid == TRUE) {
                 zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
                 if (zhuyin->candidate_number == 1) {
-                    gsize i = 3;
+                    gint i = 3;
                     while (i > 0) {
                         if (zhuyin->input[i] > 0) {
                             zhuyin->input[i] = 0;
@@ -861,10 +861,11 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                         }
                         i--;
                     }
-                    zhuyin->input[i] = 0;
-                    zhuyin->display[i] = zhuyin->candidate_member[0];
+                    if (zhuyin->input[0] == 0)
+                        zhuyin->input[0] = 1;
+                    zhuyin->display[0] = zhuyin->candidate_member[0];
                     ibus_zhuyin_engine_redraw (zhuyin);
-                    zhuyin->display[i] = NULL;
+                    zhuyin->display[0] = NULL;
                     return ibus_zhuyin_engine_commit_preedit (zhuyin);
                 } else {
                     ibus_zhuyin_engine_update_lookup_table (zhuyin);
