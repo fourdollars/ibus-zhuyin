@@ -1,4 +1,5 @@
 #include <glib.h>
+#include <gtk/gtk.h>
 #include <ibus.h>
 #include "engine.h"
 #include "zhuyin.h"
@@ -8,11 +9,6 @@ static gchar *committed_text = NULL;
 static gchar *current_preedit = NULL;
 
 // Mocking GTK functions for punctuation window
-typedef void GtkWidget;
-
-// Prototype for helper in engine.c
-void test_set_punctuation_window(GtkWidget *widget);
-
 static GtkWidget *punctuation_window_mock = (GtkWidget *)1; // dummy non-NULL pointer
 static gboolean punctuation_window_mock_visible = FALSE;
 
@@ -41,55 +37,75 @@ void ibus_engine_update_auxiliary_text(IBusEngine *engine, IBusText *text, gbool
 void ibus_engine_hide_preedit_text(IBusEngine *engine) {}
 void ibus_engine_show_preedit_text(IBusEngine *engine) {}
 
-// Dummy implementation for ibus_attr_list related functions if needed by engine.c
-// engine.c uses ibus_attr_list_new, ibus_attr_list_append, ibus_attr_underline_new.
-// These are usually in libibus. We link against libibus so it should be fine.
+// Include source directly to access static variables
+#include "../src/engine.c"
 
 static void test_h_9_space() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
     
-    // Reset state
-    if (committed_text) { g_free(committed_text); committed_text = NULL; }
-    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
-    
-    // 'h' -> ㄘ
+    // Simulate 'h'
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'h', 0, 0);
-    g_assert_cmpstr(current_preedit, ==, "ㄘ");
+    g_assert_cmpstr(current_preedit, ==, "ㄘ"); // zhuyin for h
     
-    // '9' -> ㄞ
+    // Simulate '9'
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '9', 0, 0);
-    g_assert_cmpstr(current_preedit, ==, "ㄘㄞ");
+    g_assert_cmpstr(current_preedit, ==, "ㄘㄞ"); // zhuyin for h9
     
-    // Space -> Commit "猜" (assuming single candidate)
-    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_space, 0, 0);
+    // Simulate ' ' (Space) - should commit '猜' (single candidate)
+    // Clear committed text first
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
     
-    // Verify commit
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    
     g_assert_cmpstr(committed_text, ==, "猜");
     
     g_object_unref(engine);
 }
 
 static void test_w_8_7() {
+
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
     
+
+    // Reset state
+
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
+
     if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
 
-    // 'w' -> ㄊ
+    
+
+    // Simulate 'w'
+
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'w', 0, 0);
+
     g_assert_cmpstr(current_preedit, ==, "ㄊ");
+
     
-    // '8' -> ㄚ
+
+    // Simulate '8'
+
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '8', 0, 0);
+
     g_assert_cmpstr(current_preedit, ==, "ㄊㄚ");
+
     
-    // '7' -> ˙ (Tone 5)
-    // If "遢" is the only candidate for ㄊㄚ˙, it should commit immediately.
+
+    // Simulate '7' - Tone 5 (Neutral)
+
+    // Should commit '遢' (as it is the single candidate for ㄊㄚ˙)
+
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '7', 0, 0);
+
     
+
     g_assert_cmpstr(committed_text, ==, "遢");
+
     
+
     g_object_unref(engine);
+
 }
 
 static void test_punctuation_window_m() {
@@ -109,7 +125,8 @@ static void test_punctuation_window_m() {
     g_assert_true(handled);
 
     // 2. Mock punctuation window as visible (simulating what g_idle_add would do)
-    test_set_punctuation_window(punctuation_window_mock);
+    // Directly set the static variable
+    punctuation_window = punctuation_window_mock;
     punctuation_window_mock_visible = TRUE;
 
     // 3. Press 'c' while punctuation window is visible
@@ -119,7 +136,7 @@ static void test_punctuation_window_m() {
     g_assert_cmpstr(committed_text, ==, "。");
 
     // Reset mock
-    test_set_punctuation_window(NULL);
+    punctuation_window = NULL;
     punctuation_window_mock_visible = FALSE;
 
     g_object_unref(engine);

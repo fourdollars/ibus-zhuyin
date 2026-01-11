@@ -5,7 +5,6 @@ check_PROGRAMS = test-engine
 
 test_engine_SOURCES = \
 	test-engine.c \
-	$(top_srcdir)/src/engine.c \
 	$(top_srcdir)/src/zhuyin.c \
 	$(NULL)
 
