@@ -169,6 +169,27 @@ static void test_ctrl_grave_h_1() {
     g_object_unref(engine);
 }
 
+static void test_shift_period() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // Simulate Shift + '.' (usually producing '>')
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(
+        engine,
+        '>',
+        0,
+        IBUS_SHIFT_MASK
+    );
+
+    // Verify commit
+    g_assert_cmpstr(committed_text, ==, "。");
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -177,6 +198,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/w_8_7", test_w_8_7);
     g_test_add_func("/engine/punctuation_window_m", test_punctuation_window_m);
     g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
+    g_test_add_func("/engine/shift_period", test_shift_period);
 
     return g_test_run();
 }
