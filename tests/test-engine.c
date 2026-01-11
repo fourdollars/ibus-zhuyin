@@ -36,9 +36,51 @@ void ibus_engine_update_lookup_table(IBusEngine *engine, IBusLookupTable *table,
 void ibus_engine_update_auxiliary_text(IBusEngine *engine, IBusText *text, gboolean visible) {}
 void ibus_engine_hide_preedit_text(IBusEngine *engine) {}
 void ibus_engine_show_preedit_text(IBusEngine *engine) {}
+void ibus_engine_register_properties(IBusEngine *engine, IBusPropList *prop_list) {}
+void ibus_engine_update_property(IBusEngine *engine, IBusProperty *prop) {}
 
 // Include source directly to access static variables
 #include "../src/engine.c"
+
+static void test_hsu_layout() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    
+    g_print("Calling enable...\n");
+    // Enable to setup properties
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    g_print("Enable returned.\n");
+    
+    // Switch to Hsu's layout
+    g_print("Calling property_activate...\n");
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.Hsu", PROP_STATE_CHECKED);
+    g_print("property_activate returned.\n");
+    
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+    
+    // Test 1: b (ㄅ) + k (ㄤ) + Space -> 幫
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'b', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'k', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    
+    g_assert_cmpstr(committed_text, ==, "幫");
+    
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+    
+    // Test 2: Space re-interpretation
+    // a (ㄔ/ㄟ) -> Space -> ㄟ
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'a', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    
+    g_assert_cmpstr(committed_text, ==, "ㄟ");
+    
+    g_object_unref(engine);
+}
 
 static void test_h_9_space() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
@@ -239,6 +281,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
     g_test_add_func("/engine/shift_period", test_shift_period);
     g_test_add_func("/engine/zhu_yin", test_zhu_yin);
+    g_test_add_func("/engine/hsu_layout", test_hsu_layout);
 
     return g_test_run();
 }

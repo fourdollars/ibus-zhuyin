@@ -23,3 +23,12 @@ msgstr "注音"
 #: src/main.c:78
 msgid "A phonetic (Zhuyin/Bopomofo) Chinese input method"
 msgstr "傳統注音ㄅㄆㄇㄈ中文輸入法"
+
+msgid "Keyboard"
+msgstr "鍵盤"
+
+msgid "Standard"
+msgstr "標準"
+
+msgid "Hsu's"
+msgstr "許氏"

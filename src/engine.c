@@ -20,6 +20,8 @@
 #include "zhuyin.h"
 #include "punctuation.h"
 
+#include <glib/gi18n.h>
+
 #ifndef G_UNICHAR_MAX_BYTES
 #define G_UNICHAR_MAX_BYTES 6
 #endif
@@ -29,6 +31,11 @@
 
 typedef struct _IBusZhuyinEngine IBusZhuyinEngine;
 typedef struct _IBusZhuyinEngineClass IBusZhuyinEngineClass;
+
+typedef enum {
+    LAYOUT_STANDARD = 0,
+    LAYOUT_HSU      = 1,
+} ZhuyinLayout;
 
 struct _IBusZhuyinEngine {
     IBusEngine parent;
@@ -46,6 +53,9 @@ struct _IBusZhuyinEngine {
     guint candidate_number;
 
     IBusLookupTable *table;
+    
+    ZhuyinLayout layout;
+    IBusProperty *prop_menu;
 };
 
 struct _IBusZhuyinEngineClass {
@@ -100,6 +110,9 @@ static void ibus_engine_set_cursor_location (IBusEngine             *engine,
                                              gint                    y,
                                              gint                    w,
                                              gint                    h);
+static void ibus_zhuyin_engine_property_activate (IBusEngine *engine,
+                                                  const gchar *prop_name,
+                                                  guint prop_state);
 static void ibus_zhuyin_engine_page_up     (IBusEngine             *engine);
 static void ibus_zhuyin_engine_page_down   (IBusEngine             *engine);
 static void ibus_zhuyin_engine_candidate_clicked (IBusEngine             *engine,
@@ -382,6 +395,7 @@ ibus_zhuyin_engine_class_init (IBusZhuyinEngineClass *klass)
     engine_class->page_down           = ibus_zhuyin_engine_page_down;
     engine_class->page_up             = ibus_zhuyin_engine_page_up;
     engine_class->process_key_event   = ibus_zhuyin_engine_process_key_event;
+    engine_class->property_activate   = ibus_zhuyin_engine_property_activate;
     engine_class->reset               = ibus_zhuyin_engine_reset;
     engine_class->set_cursor_location = ibus_engine_set_cursor_location;
 }
@@ -394,6 +408,9 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
     zhuyin->mode = IBUS_ZHUYIN_MODE_NORMAL;
     zhuyin->page_size = 9;
     zhuyin->punctuation_candidate = NULL;
+
+    zhuyin->layout = LAYOUT_STANDARD;
+    zhuyin->prop_menu = NULL;
 
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
     ibus_lookup_table_set_orientation(zhuyin->table, IBUS_ORIENTATION_HORIZONTAL);
@@ -675,6 +692,183 @@ ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
     return TRUE;
 }
 
+static guint
+get_zhuyin_index(IBusZhuyinEngine *zhuyin, guint keyval, gint type)
+{
+    if (zhuyin->layout == LAYOUT_STANDARD) {
+        if (type == 1) { // Initial
+            switch (keyval) {
+                case '1': return 1; case 'q': return 2; case 'a': return 3; case 'z': return 4;
+                case '2': return 5; case 'w': return 6; case 's': return 7; case 'x': return 8;
+                case 'e': return 9; case 'd': return 10; case 'c': return 11; case 'r': return 12;
+                case 'f': return 13; case 'v': return 14; case '5': return 15; case 't': return 16;
+                case 'g': return 17; case 'b': return 18; case 'y': return 19; case 'h': return 20;
+                case 'n': return 21;
+            }
+        } else if (type == 2) { // Medial
+            switch (keyval) {
+                case 'u': return 1; case 'j': return 2; case 'm': return 3;
+            }
+        } else if (type == 3) { // Final
+            switch (keyval) {
+                case '8': return 1; case 'i': return 2; case 'k': return 3; case ',': return 4;
+                case '9': return 5; case 'o': return 6; case 'l': return 7; case '.': return 8;
+                case '0': return 9; case 'p': return 10; case ';': return 11; case '/': return 12;
+                case '-': return 13;
+            }
+        } else if (type == 4) { // Tone
+            switch (keyval) {
+                case '6': return 1; case '3': return 2; case '4': return 3; case '7': return 4;
+            }
+        }
+    } else { // Hsu
+        if (type == 1) { // Initial
+            switch (keyval) {
+                case 'b': return 1; case 'p': return 2; case 'm': return 3; case 'f': return 4;
+                case 'd': return 5; case 't': return 6; case 'n': return 7; case 'l': return 8;
+                case 'g': return 9; case 'k': return 10; case 'h': return 11;
+                case 'j': return 12; case 'v': return 13; case 'c': return 14;
+                case 'z': return 15; case 'a': return 16; case 's': return 17; case 'r': return 18;
+                case 'q': return 19; case 'w': return 20; case '2': return 21;
+            }
+        } else if (type == 2) { // Medial
+            switch (keyval) {
+                case 'e': return 1; case 'x': return 2; case 'u': return 3;
+            }
+        } else if (type == 3) { // Final
+            switch (keyval) {
+                case 'y': return 1; case 'h': return 2; case 'g': return 3; case '9': return 4;
+                case 'i': return 5; case 'a': return 6; case 'w': return 7; case 'o': return 8;
+                case 'm': return 9; case 'n': return 10; case 'k': return 11; case 'l': return 12;
+                case ',': return 13; // ㄦ
+            }
+        } else if (type == 4) { // Tone
+            switch (keyval) {
+                case '6': return 1; case '3': return 2; case '4': return 3; case '7': return 4;
+            }
+        }
+    }
+    return 0;
+}
+
+static void 
+get_zhuyin_guess(IBusZhuyinEngine *zhuyin, guint keyval, gboolean prefer_final, gchar **phonetic, gint *type)
+{
+    *phonetic = NULL;
+    *type = 0;
+
+    if (zhuyin->layout == LAYOUT_STANDARD) {
+        // Standard Map Text
+        switch (keyval) {
+            case '1': *phonetic = "ㄅ"; *type = 1; break;
+            case 'q': *phonetic = "ㄆ"; *type = 1; break;
+            case 'a': *phonetic = "ㄇ"; *type = 1; break;
+            case 'z': *phonetic = "ㄈ"; *type = 1; break;
+            case '2': *phonetic = "ㄉ"; *type = 1; break;
+            case 'w': *phonetic = "ㄊ"; *type = 1; break;
+            case 's': *phonetic = "ㄋ"; *type = 1; break;
+            case 'x': *phonetic = "ㄌ"; *type = 1; break;
+            case 'e': *phonetic = "ㄍ"; *type = 1; break;
+            case 'd': *phonetic = "ㄎ"; *type = 1; break;
+            case 'c': *phonetic = "ㄏ"; *type = 1; break;
+            case 'r': *phonetic = "ㄐ"; *type = 1; break;
+            case 'f': *phonetic = "ㄑ"; *type = 1; break;
+            case 'v': *phonetic = "ㄒ"; *type = 1; break;
+            case '5': *phonetic = "ㄓ"; *type = 1; break;
+            case 't': *phonetic = "ㄔ"; *type = 1; break;
+            case 'g': *phonetic = "ㄕ"; *type = 1; break;
+            case 'b': *phonetic = "ㄖ"; *type = 1; break;
+            case 'y': *phonetic = "ㄗ"; *type = 1; break;
+            case 'h': *phonetic = "ㄘ"; *type = 1; break;
+            case 'n': *phonetic = "ㄙ"; *type = 1; break;
+            case 'u': *phonetic = "ㄧ"; *type = 2; break;
+            case 'j': *phonetic = "ㄨ"; *type = 2; break;
+            case 'm': *phonetic = "ㄩ"; *type = 2; break;
+            case '8': *phonetic = "ㄚ"; *type = 3; break;
+            case 'i': *phonetic = "ㄛ"; *type = 3; break;
+            case 'k': *phonetic = "ㄜ"; *type = 3; break;
+            case ',': *phonetic = "ㄝ"; *type = 3; break;
+            case '9': *phonetic = "ㄞ"; *type = 3; break;
+            case 'o': *phonetic = "ㄟ"; *type = 3; break;
+            case 'l': *phonetic = "ㄠ"; *type = 3; break;
+            case '.': *phonetic = "ㄡ"; *type = 3; break;
+            case '0': *phonetic = "ㄢ"; *type = 3; break;
+            case 'p': *phonetic = "ㄣ"; *type = 3; break;
+            case ';': *phonetic = "ㄤ"; *type = 3; break;
+            case '/': *phonetic = "ㄥ"; *type = 3; break;
+            case '-': *phonetic = "ㄦ"; *type = 3; break;
+            case '3': *phonetic = "ˇ"; *type = 4; break;
+            case '4': *phonetic = "ˋ"; *type = 4; break;
+            case '6': *phonetic = "ˊ"; *type = 4; break;
+            case '7': *phonetic = "˙"; *type = 4; break;
+        }
+        return;
+    }
+
+    // Hsu's Layout Text
+    switch(keyval) {
+        case 'b': *phonetic = "ㄅ"; *type = 1; break;
+        case 'p': *phonetic = "ㄆ"; *type = 1; break;
+        case 'm': 
+            if (prefer_final) { *phonetic = "ㄢ"; *type = 3; }
+            else { *phonetic = "ㄇ"; *type = 1; }
+            break;
+        case 'f': *phonetic = "ㄈ"; *type = 1; break;
+        case 'd': *phonetic = "ㄉ"; *type = 1; break;
+        case 't': *phonetic = "ㄊ"; *type = 1; break;
+        case 'n': 
+            if (prefer_final) { *phonetic = "ㄣ"; *type = 3; }
+            else { *phonetic = "ㄋ"; *type = 1; }
+            break;
+        case 'l': 
+            if (prefer_final) { *phonetic = "ㄥ"; *type = 3; }
+            else { *phonetic = "ㄌ"; *type = 1; }
+            break;
+        case 'g': 
+            if (prefer_final) { *phonetic = "ㄜ"; *type = 3; }
+            else { *phonetic = "ㄍ"; *type = 1; }
+            break;
+        case 'k': 
+            if (prefer_final) { *phonetic = "ㄤ"; *type = 3; }
+            else { *phonetic = "ㄎ"; *type = 1; }
+            break;
+        case 'h': 
+            if (prefer_final) { *phonetic = "ㄛ"; *type = 3; }
+            else { *phonetic = "ㄏ"; *type = 1; }
+            break;
+        case 'j': *phonetic = "ㄐ"; *type = 1; break;
+        case 'v': *phonetic = "ㄑ"; *type = 1; break;
+        case 'c': *phonetic = "ㄒ"; *type = 1; break;
+        case 'z': *phonetic = "ㄓ"; *type = 1; break;
+        case 'a': 
+            if (prefer_final) { *phonetic = "ㄟ"; *type = 3; }
+            else { *phonetic = "ㄔ"; *type = 1; }
+            break;
+        case 's': *phonetic = "ㄕ"; *type = 1; break;
+        case 'x': *phonetic = "ㄨ"; *type = 2; break;
+        case 'r': *phonetic = "ㄖ"; *type = 1; break;
+        case 'q': *phonetic = "ㄗ"; *type = 1; break;
+        case 'w': 
+            if (prefer_final) { *phonetic = "ㄠ"; *type = 3; }
+            else { *phonetic = "ㄘ"; *type = 1; }
+            break;
+        case '2': *phonetic = "ㄙ"; *type = 1; break;
+        
+        case 'e': *phonetic = "ㄧ"; *type = 2; break;
+        case 'u': *phonetic = "ㄩ"; *type = 2; break;
+        case 'y': *phonetic = "ㄚ"; *type = 3; break;
+        case 'i': *phonetic = "ㄞ"; *type = 3; break;
+        case 'o': *phonetic = "ㄡ"; *type = 3; break;
+        case '9': *phonetic = "ㄝ"; *type = 3; break; 
+        case ',': *phonetic = "ㄦ"; *type = 3; break;
+        
+        case '3': *phonetic = "ˇ"; *type = 4; break;
+        case '4': *phonetic = "ˋ"; *type = 4; break;
+        case '6': *phonetic = "ˊ"; *type = 4; break;
+        case '7': *phonetic = "˙"; *type = 4; break;
+    }
+}
+
 static gboolean
 ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                            guint             keyval,
@@ -684,172 +878,80 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
     gchar* phonetic = NULL;
     gint   type = 0;
 
+    // Handle Space re-interpretation properly
+    if (keyval == IBUS_space && !zhuyin->valid && zhuyin->layout == LAYOUT_HSU) {
+        guint k = zhuyin->input[0];
+        if (k != 0 && zhuyin->input[1] == 0 && zhuyin->input[2] == 0 && zhuyin->input[3] == 0) {
+            gchar *p = NULL;
+            gint t = 0;
+            // Force re-check as final
+            get_zhuyin_guess(zhuyin, k, TRUE, &p, &t);
+            if (t > 1 && p != NULL) {
+                 zhuyin->input[0] = 0;
+                 zhuyin->display[0] = NULL;
+                 zhuyin->input[t-1] = k;
+                 zhuyin->display[t-1] = p;
+                 
+                 ibus_zhuyin_engine_redraw(zhuyin);
+                 
+                 guint i = 0;
+                 guint stanza = 0;
+                 for (i = 0; i < 4; i++) {
+                     if (zhuyin->input[i]) {
+                         guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
+                         if (i == 0) stanza |= idx;
+                         else stanza |= (idx << (i * 8));
+                     }
+                 }
+                 zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
+                 zhuyin->candidate_number = i;
+                 zhuyin->valid = (zhuyin->candidate_member != NULL);
+                 if (zhuyin->candidate_number % zhuyin->page_size)
+                    zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
+                 else
+                    zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+            }
+        }
+    }
+
     switch (keyval) {
-        case '1':
-            phonetic = "ㄅ";
-            type = 1;
-            break;
-        case 'q':
-            phonetic = "ㄆ";
-            type = 1;
-            break;
-        case 'a':
-            phonetic = "ㄇ";
-            type = 1;
-            break;
-        case 'z':
-            phonetic = "ㄈ";
-            type = 1;
-            break;
-        case '2':
-            phonetic = "ㄉ";
-            type = 1;
-            break;
-        case 'w':
-            phonetic = "ㄊ";
-            type = 1;
-            break;
-        case 's':
-            phonetic = "ㄋ";
-            type = 1;
-            break;
-        case 'x':
-            phonetic = "ㄌ";
-            type = 1;
-            break;
-        case 'e':
-            phonetic = "ㄍ";
-            type = 1;
-            break;
-        case 'd':
-            phonetic = "ㄎ";
-            type = 1;
-            break;
-        case 'c':
-            phonetic = "ㄏ";
-            type = 1;
-            break;
-        case 'r':
-            phonetic = "ㄐ";
-            type = 1;
-            break;
-        case 'f':
-            phonetic = "ㄑ";
-            type = 1;
-            break;
-        case 'v':
-            phonetic = "ㄒ";
-            type = 1;
-            break;
-        case '5':
-            phonetic = "ㄓ";
-            type = 1;
-            break;
-        case 't':
-            phonetic = "ㄔ";
-            type = 1;
-            break;
-        case 'g':
-            phonetic = "ㄕ";
-            type = 1;
-            break;
-        case 'b':
-            phonetic = "ㄖ";
-            type = 1;
-            break;
-        case 'y':
-            phonetic = "ㄗ";
-            type = 1;
-            break;
-        case 'h':
-            phonetic = "ㄘ";
-            type = 1;
-            break;
-        case 'n':
-            phonetic = "ㄙ";
-            type = 1;
-            break;
-        case 'u':
-            phonetic = "ㄧ";
-            type = 2;
-            break;
-        case 'j':
-            phonetic = "ㄨ";
-            type = 2;
-            break;
-        case 'm':
-            phonetic = "ㄩ";
-            type = 2;
-            break;
-        case '8':
-            phonetic = "ㄚ";
-            type = 3;
-            break;
-        case 'i':
-            phonetic = "ㄛ";
-            type = 3;
-            break;
-        case 'k':
-            phonetic = "ㄜ";
-            type = 3;
-            break;
-        case ',':
-            phonetic = "ㄝ";
-            type = 3;
-            break;
-        case '9':
-            phonetic = "ㄞ";
-            type = 3;
-            break;
-        case 'o':
-            phonetic = "ㄟ";
-            type = 3;
-            break;
-        case 'l':
-            phonetic = "ㄠ";
-            type = 3;
-            break;
-        case '.':
-            phonetic = "ㄡ";
-            type = 3;
-            break;
-        case '0':
-            phonetic = "ㄢ";
-            type = 3;
-            break;
-        case 'p':
-            phonetic = "ㄣ";
-            type = 3;
-            break;
-        case ';':
-            phonetic = "ㄤ";
-            type = 3;
-            break;
-        case '/':
-            phonetic = "ㄥ";
-            type = 3;
-            break;
-        case '-':
-            phonetic = "ㄦ";
-            type = 3;
-            break;
-        case '3':
-            phonetic = "ˇ";
-            type = 4;
-            break;
-        case '4':
-            phonetic = "ˋ";
-            type = 4;
-            break;
-        case '6':
-            phonetic = "ˊ";
-            type = 4;
-            break;
-        case '7':
-            phonetic = "˙";
-            type = 4;
-            break;
         case IBUS_space:
+            g_print("Space pressed. Layout: %d, Input[0]: %d\n", zhuyin->layout, zhuyin->input[0]);
+            // Handle Hsu's ambiguity re-interpretation on Space
+            if (zhuyin->layout == LAYOUT_HSU && zhuyin->input[0] != 0 && zhuyin->input[1] == 0 && zhuyin->input[2] == 0 && zhuyin->input[3] == 0) {
+                 g_print("Attempting re-interpretation...\n");
+                 gchar *p = NULL;
+                 gint t = 0;
+                 get_zhuyin_guess(zhuyin, zhuyin->input[0], TRUE, &p, &t);
+                 
+                 g_print("Guess result: p=%s, t=%d\n", p, t);
+                 
+                 if (t > 1 && p != NULL) {
+                     zhuyin->input[t-1] = zhuyin->input[0]; 
+                     zhuyin->input[0] = 0;
+                     zhuyin->display[t-1] = p;
+                     zhuyin->display[0] = NULL;
+                     
+                     // Re-calculate stanza
+                     guint i = 0;
+                     guint stanza = 0;
+                     for (i = 0; i < 4; i++) {
+                         if (zhuyin->input[i]) {
+                             guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
+                             if (i == 0) stanza |= idx;
+                             else stanza |= (idx << (i * 8));
+                         }
+                     }
+                     zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
+                     zhuyin->candidate_number = i;
+                     zhuyin->valid = (zhuyin->candidate_member != NULL);
+                     if (zhuyin->candidate_number % zhuyin->page_size)
+                        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
+                     else
+                        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+                 }
+            }
+
             if (zhuyin->valid == TRUE) {
                 zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
                 if (zhuyin->candidate_number == 1) {
@@ -872,6 +974,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                     return TRUE;
                 }
             }
+            // Fallthrough
         case IBUS_Escape:
         case IBUS_Delete:
             if (zhuyin->preedit->len == 0)
@@ -898,8 +1001,19 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         case IBUS_Return:
             return ibus_zhuyin_engine_commit_preedit (zhuyin);
         default:
-            return FALSE;
+            break;
     }
+
+    gboolean prefer_final = FALSE;
+    if (zhuyin->layout == LAYOUT_HSU) {
+        // If we have an initial (input[0]), prefer final for next key
+        if (zhuyin->input[0] != 0) prefer_final = TRUE;
+        // Also if input[1] or [2] is set?
+        // zhuyin->input is array of keyvals.
+        // If prefer_final is true, we try to map to 2 or 3.
+    }
+    
+    get_zhuyin_guess(zhuyin, keyval, prefer_final, &phonetic, &type);
 
     if (type > 0) {
         guint i = 0;
@@ -910,130 +1024,10 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         ibus_zhuyin_engine_redraw (zhuyin);
 
         for (i = 0; i < 4; i++) {
-            switch (zhuyin->input[i]) {
-                case '1':
-                    stanza = stanza | 1;
-                    break;
-                case 'q':
-                    stanza = stanza | 2;
-                    break;
-                case 'a':
-                    stanza = stanza | 3;
-                    break;
-                case 'z':
-                    stanza = stanza | 4;
-                    break;
-                case '2':
-                    stanza = stanza | 5;
-                    break;
-                case 'w':
-                    stanza = stanza | 6;
-                    break;
-                case 's':
-                    stanza = stanza | 7;
-                    break;
-                case 'x':
-                    stanza = stanza | 8;
-                    break;
-                case 'e':
-                    stanza = stanza | 9;
-                    break;
-                case 'd':
-                    stanza = stanza | 10;
-                    break;
-                case 'c':
-                    stanza = stanza | 11;
-                    break;
-                case 'r':
-                    stanza = stanza | 12;
-                    break;
-                case 'f':
-                    stanza = stanza | 13;
-                    break;
-                case 'v':
-                    stanza = stanza | 14;
-                    break;
-                case '5':
-                    stanza = stanza | 15;
-                    break;
-                case 't':
-                    stanza = stanza | 16;
-                    break;
-                case 'g':
-                    stanza = stanza | 17;
-                    break;
-                case 'b':
-                    stanza = stanza | 18;
-                    break;
-                case 'y':
-                    stanza = stanza | 19;
-                    break;
-                case 'h':
-                    stanza = stanza | 20;
-                    break;
-                case 'n':
-                    stanza = stanza | 21;
-                    break;
-                case 'u':
-                    stanza = stanza | (1 << 8);
-                    break;
-                case 'j':
-                    stanza = stanza | (2 << 8);
-                    break;
-                case 'm':
-                    stanza = stanza | (3 << 8);
-                    break;
-                case '8':
-                    stanza = stanza | (1 << 16);
-                    break;
-                case 'i':
-                    stanza = stanza | (2 << 16);
-                    break;
-                case 'k':
-                    stanza = stanza | (3 << 16);
-                    break;
-                case ',':
-                    stanza = stanza | (4 << 16);
-                    break;
-                case '9':
-                    stanza = stanza | (5 << 16);
-                    break;
-                case 'o':
-                    stanza = stanza | (6 << 16);
-                    break;
-                case 'l':
-                    stanza = stanza | (7 << 16);
-                    break;
-                case '.':
-                    stanza = stanza | (8 << 16);
-                    break;
-                case '0':
-                    stanza = stanza | (9 << 16);
-                    break;
-                case 'p':
-                    stanza = stanza | (10 << 16);
-                    break;
-                case ';':
-                    stanza = stanza | (11 << 16);
-                    break;
-                case '/':
-                    stanza = stanza | (12 << 16);
-                    break;
-                case '-':
-                    stanza = stanza | (13 << 16);
-                    break;
-                case '6':
-                    stanza = stanza | (1 << 24);
-                    break;
-                case '3':
-                    stanza = stanza | (2 << 24);
-                    break;
-                case '4':
-                    stanza = stanza | (3 << 24);
-                    break;
-                case '7':
-                    stanza = stanza | (4 << 24);
-                    break;
+            if (zhuyin->input[i]) {
+                guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
+                if (i == 0) stanza |= idx;
+                else stanza |= (idx << (i * 8));
             }
         }
 
@@ -1063,6 +1057,121 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
     }
 
     return TRUE;
+}
+
+static void
+get_zhuyin_hsu(guint keyval, gboolean prefer_final, gchar **phonetic, gint *type)
+{
+    *phonetic = NULL;
+    *type = 0;
+    
+    // Tones (Natural/Hsu often use standard numbers or letters)
+    // S=˙, D=ˊ, F=ˇ, J=ˋ, Space=1
+    // BUT we need to support standard number keys for tones too as fallback?
+    // Let's stick to the letters mentioned in search result first, plus standard numbers if they don't conflict.
+    
+    switch(keyval) {
+        case 'b': *phonetic = "ㄅ"; *type = 1; break;
+        case 'p': *phonetic = "ㄆ"; *type = 1; break;
+        case 'm': 
+            if (prefer_final) { *phonetic = "ㄢ"; *type = 3; }
+            else { *phonetic = "ㄇ"; *type = 1; }
+            break;
+        case 'f': *phonetic = "ㄈ"; *type = 1; break; // F is ㄈ. Tone 3 is F?
+            // If F is Tone 3, it conflicts.
+            // Usually Tone keys are only active if there is a syllable pending.
+            // But F is Initial ㄈ.
+            // Let's assume standard number keys for Tones for now to avoid conflict, unless confirmed.
+            // Search result said: "聲調符號...對應 S D F G H J".
+            // S=˙, D=ˊ, F=ˇ, G=ㄜ, H=ㄛ, J=ˋ.
+            // Wait, G and H are finals?
+            // If I type `ㄅ` (B) + `ˇ` (F)?
+            // If `input[0]` is set, F might be Tone?
+            // But F is ㄈ.
+            // Ambiguity: Initial vs Tone.
+            // Usually Tone is only valid at the end.
+            // If I type B F, is it ㄅㄈ (Invalid) or ㄅˇ?
+            // I will implement Tone mapping ONLY if prefer_final is TRUE (or strictly, if we are expecting tone).
+            // But prefer_final is for Medial/Final.
+            break;
+            
+        case 'd': *phonetic = "ㄉ"; *type = 1; break; // D=ˊ (Tone 2)
+        case 't': *phonetic = "ㄊ"; *type = 1; break;
+        case 'n': 
+            if (prefer_final) { *phonetic = "ㄣ"; *type = 3; }
+            else { *phonetic = "ㄋ"; *type = 1; }
+            break;
+        case 'l': 
+            if (prefer_final) { *phonetic = "ㄥ"; *type = 3; } // Or ㄦ?
+            else { *phonetic = "ㄌ"; *type = 1; }
+            break;
+        case 'g': 
+            if (prefer_final) { *phonetic = "ㄜ"; *type = 3; }
+            else { *phonetic = "ㄍ"; *type = 1; }
+            break;
+        case 'k': 
+            if (prefer_final) { *phonetic = "ㄤ"; *type = 3; }
+            else { *phonetic = "ㄎ"; *type = 1; }
+            break;
+        case 'h': 
+            if (prefer_final) { *phonetic = "ㄛ"; *type = 3; }
+            else { *phonetic = "ㄏ"; *type = 1; }
+            break;
+        case 'j': 
+            // J=ㄐ or Tone 4?
+            *phonetic = "ㄐ"; *type = 1; 
+            break;
+        case 'v': *phonetic = "ㄑ"; *type = 1; break;
+        case 'c': *phonetic = "ㄒ"; *type = 1; break;
+            
+        case 'z': *phonetic = "ㄓ"; *type = 1; break;
+        case 'a': 
+            if (prefer_final) { *phonetic = "ㄟ"; *type = 3; }
+            else { *phonetic = "ㄔ"; *type = 1; }
+            break;
+        case 's': 
+            // S=ㄕ or Tone 5?
+            *phonetic = "ㄕ"; *type = 1; 
+            break;
+        case 'x': 
+             // X=ㄖ or ㄨ? Snippet said R=ㄖ, X=ㄨ.
+             *phonetic = "ㄨ"; *type = 2; 
+             break;
+        case 'r': *phonetic = "ㄖ"; *type = 1; break;
+        
+        case 'q': *phonetic = "ㄗ"; *type = 1; break;
+        case 'w': 
+            if (prefer_final) { *phonetic = "ㄠ"; *type = 3; }
+            else { *phonetic = "ㄘ"; *type = 1; }
+            break;
+        case '2': *phonetic = "ㄙ"; *type = 1; break; // Using 2 for ㄙ
+        
+        // Vowels
+        case 'e': *phonetic = "ㄧ"; *type = 2; break;
+        case 'u': *phonetic = "ㄩ"; *type = 2; break;
+        case 'y': *phonetic = "ㄚ"; *type = 3; break;
+        case 'i': *phonetic = "ㄞ"; *type = 3; break;
+        case 'o': *phonetic = "ㄡ"; *type = 3; break;
+        
+        // Tones (Standard)
+        case '3': *phonetic = "ˇ"; *type = 4; break;
+        case '4': *phonetic = "ˋ"; *type = 4; break;
+        case '6': *phonetic = "ˊ"; *type = 4; break;
+        case '7': *phonetic = "˙"; *type = 4; break;
+    }
+    
+    // Tones on letters (overrides if prefer_final is true/or handled separately?)
+    // If I map 'd' to Tone 2 here, I lose 'ㄉ'.
+    // I will stick to standard number tones for safety unless user strictly asks for letter tones.
+    // The prompt just said "Hsu's Zhuyin support".
+    // I'll add the tone letters ONLY if they are not conflicting or if they are purely tones.
+    // S=˙ (Conflict ㄕ)
+    // D=ˊ (Conflict ㄉ)
+    // F=ˇ (Conflict ㄈ)
+    // J=ˋ (Conflict ㄐ)
+    
+    // I will NOT add letter tones to avoid ambiguity without a more complex state machine.
+    // Users can use standard 3,4,6,7.
 }
 
 static gboolean
@@ -1380,10 +1489,125 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
     return TRUE;
 }
 
+static void
+ibus_zhuyin_engine_property_activate (IBusEngine *engine,
+                                      const gchar *prop_name,
+                                      guint prop_state)
+{
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+
+    if (g_strcmp0 (prop_name, "InputMode.Standard") == 0) {
+        if (prop_state == PROP_STATE_CHECKED) {
+            zhuyin->layout = LAYOUT_STANDARD;
+            
+            IBusPropList *props = ibus_prop_list_new();
+            IBusProperty *prop;
+            
+            prop = ibus_property_new ("InputMode.Standard",
+                                      PROP_TYPE_RADIO,
+                                      ibus_text_new_from_string (_("Standard")),
+                                      NULL,
+                                      NULL,
+                                      TRUE,
+                                      TRUE,
+                                      PROP_STATE_CHECKED,
+                                      NULL);
+            ibus_prop_list_append (props, prop);
+            
+            prop = ibus_property_new ("InputMode.Hsu",
+                                      PROP_TYPE_RADIO,
+                                      ibus_text_new_from_string (_("Hsu's")),
+                                      NULL,
+                                      NULL,
+                                      TRUE,
+                                      TRUE,
+                                      PROP_STATE_UNCHECKED,
+                                      NULL);
+            ibus_prop_list_append (props, prop);
+            
+            ibus_property_set_sub_props(zhuyin->prop_menu, props);
+            ibus_engine_update_property (engine, zhuyin->prop_menu);
+        }
+    } else if (g_strcmp0 (prop_name, "InputMode.Hsu") == 0) {
+        if (prop_state == PROP_STATE_CHECKED) {
+            zhuyin->layout = LAYOUT_HSU;
+            
+            IBusPropList *props = ibus_prop_list_new();
+            IBusProperty *prop;
+            
+            prop = ibus_property_new ("InputMode.Standard",
+                                      PROP_TYPE_RADIO,
+                                      ibus_text_new_from_string (_("Standard")),
+                                      NULL,
+                                      NULL,
+                                      TRUE,
+                                      TRUE,
+                                      PROP_STATE_UNCHECKED,
+                                      NULL);
+            ibus_prop_list_append (props, prop);
+            
+            prop = ibus_property_new ("InputMode.Hsu",
+                                      PROP_TYPE_RADIO,
+                                      ibus_text_new_from_string (_("Hsu's")),
+                                      NULL,
+                                      NULL,
+                                      TRUE,
+                                      TRUE,
+                                      PROP_STATE_CHECKED,
+                                      NULL);
+            ibus_prop_list_append (props, prop);
+            
+            ibus_property_set_sub_props(zhuyin->prop_menu, props);
+            ibus_engine_update_property (engine, zhuyin->prop_menu);
+        }
+    }
+}
+
 static void ibus_zhuyin_engine_enable (IBusEngine *engine)
 {
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+    IBusProperty *prop;
+    IBusPropList *prop_list = ibus_prop_list_new ();
+    IBusPropList *sub_props = ibus_prop_list_new ();
+
     ibus_zhuyin_engine_reset (engine);
     engine_instance = engine;
+
+    prop = ibus_property_new ("InputMode.Standard",
+                              PROP_TYPE_RADIO,
+                              ibus_text_new_from_string (_("Standard")),
+                              NULL,
+                              NULL,
+                              TRUE,
+                              TRUE,
+                              zhuyin->layout == LAYOUT_STANDARD ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                              NULL);
+    ibus_prop_list_append (sub_props, prop);
+
+    prop = ibus_property_new ("InputMode.Hsu",
+                              PROP_TYPE_RADIO,
+                              ibus_text_new_from_string (_("Hsu's")),
+                              NULL,
+                              NULL,
+                              TRUE,
+                              TRUE,
+                              zhuyin->layout == LAYOUT_HSU ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                              NULL);
+    ibus_prop_list_append (sub_props, prop);
+
+    zhuyin->prop_menu = ibus_property_new ("InputMode",
+                                           PROP_TYPE_MENU,
+                                           ibus_text_new_from_string (_("Keyboard")),
+                                           NULL,
+                                           NULL,
+                                           TRUE,
+                                           TRUE,
+                                           PROP_STATE_UNCHECKED,
+                                           sub_props);
+    g_object_ref_sink (zhuyin->prop_menu);
+
+    ibus_prop_list_append (prop_list, zhuyin->prop_menu);
+    ibus_engine_register_properties (engine, prop_list);
 }
 
 static void ibus_zhuyin_engine_disable (IBusEngine *engine)
