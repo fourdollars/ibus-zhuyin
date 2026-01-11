@@ -24,6 +24,9 @@
 
 static guchar *initialized_flags = NULL;
 
+/**
+ * Initialize the Zhuyin input method data structures.
+ */
 void zhuyin_init(void)
 {
     if (initialized_flags == NULL) {
@@ -31,6 +34,13 @@ void zhuyin_init(void)
     }
 }
 
+/**
+ * Get candidate characters for a given Zhuyin index.
+ *
+ * @param index The Zhuyin phonetic index
+ * @param number Pointer to store the number of candidates
+ * @return Array of candidate strings, NULL-terminated
+ */
 gchar** zhuyin_candidate(unsigned int index, unsigned int* number)
 {
     int low = 0;

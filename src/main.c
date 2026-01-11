@@ -54,7 +54,7 @@ init (void)
     bus = ibus_bus_new ();
     g_object_ref_sink (bus);
     g_signal_connect (bus, "disconnected", G_CALLBACK (ibus_disconnected_cb), NULL);
-	
+
     factory = ibus_factory_new (ibus_bus_get_connection (bus));
     g_object_ref_sink (factory);
     ibus_factory_add_engine (factory, "zhuyin", IBUS_TYPE_ZHUYIN_ENGINE);
@@ -91,6 +91,13 @@ init (void)
     }
 }
 
+/**
+ * Main entry point for the ibus-zhuyin input method engine.
+ *
+ * @param argc Number of command line arguments
+ * @param argv Array of command line arguments
+ * @return Exit status
+ */
 int main(int argc, char **argv)
 {
     GError *error = NULL;

@@ -21,7 +21,7 @@
 
 #include <ibus.h>
 
-#define IBUS_TYPE_ZHUYIN_ENGINE	(ibus_zhuyin_engine_get_type ())
+#define IBUS_TYPE_ZHUYIN_ENGINE (ibus_zhuyin_engine_get_type ())
 
 GType   ibus_zhuyin_engine_get_type    (void);
 

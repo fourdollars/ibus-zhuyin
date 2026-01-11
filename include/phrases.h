@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2026 Shih-Yuan Lee (FourDollars) <fourdollars@debian.org>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef __PHRASES_H__
 #define __PHRASES_H__
 
@@ -5581,8 +5598,9 @@ static const PhraseEntry phrase_table[] = {
     {"齷", "齪"},
     {"龍", "山 頭 去 潭 鑾 王 年 斌 門 應 眼 捲 茶 果 舟 發 蝦 珠 峒 鳳"},
     {"龐", "大 然 雜 克 德 畢 貝 蒂"},
-    {"龜", "山 甲 裂 殼 毛 粿 王 縮 子 兔 速 車 笑 頭 製 鱉 苓 婿 文 玉"},
-    {NULL, NULL}
+    {"龜", "山 甲 裂 殼 毛 粿 王 縮 子 兔 速 車 笑 頭 製 鱉 苓 婿 文 玉"}
 };
 
 #endif
+
+/* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */

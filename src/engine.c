@@ -1688,7 +1688,15 @@ ibus_zhuyin_phrase_phase (IBusZhuyinEngine *zhuyin,
     ibus_zhuyin_engine_reset((IBusEngine *)zhuyin);
     return ibus_zhuyin_preedit_phase(zhuyin, keyval, keycode, modifiers);
 }
-
+/**
+ * Process a key event for the Zhuyin input method.
+ *
+ * @param engine The IBus engine instance
+ * @param keyval The key value (e.g., IBUS_a)
+ * @param keycode The key code
+ * @param modifiers Key modifiers (e.g., shift, ctrl)
+ * @return TRUE if the key was handled, FALSE otherwise
+ */
 static gboolean
 ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
                                        guint       keyval,

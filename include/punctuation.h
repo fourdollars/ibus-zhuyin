@@ -61,3 +61,5 @@ static const PunctuationEntry leading_key_punctuation[] = {
 };
 
 #endif /* __PUNCTUATION_H__ */
+
+/* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */
