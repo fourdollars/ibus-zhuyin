@@ -30,31 +30,31 @@ m4_define(ibus_maybe_datestamp,
 m4_define([ibus_version],
     ibus_major_version.ibus_minor_version.ibus_micro_version[]ibus_maybe_datestamp)
 
-AC_INIT([package_name], [ibus_version], [https://github.com/fourdollars/ibus-zhuyin/issues], [package_name])
+AC_INIT([package_name],[ibus_version],[https://github.com/fourdollars/ibus-zhuyin/issues],[package_name])
 AM_MAINTAINER_MODE([enable])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall dist-xz no-dist-gzip silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CHECK_FUNCS([setlocale])
 AC_CHECK_HEADERS([locale.h])
-AC_PREREQ
+AC_PREREQ([2.71])
 
 # define PACKAGE_VERSION_* variables
 AS_VERSION
 AS_NANO
 AM_SANITY_CHECK
 AM_MAINTAINER_MODE
-AM_DISABLE_STATIC
+AC_DISABLE_STATIC([])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_ISC_POSIX
-AC_HEADER_STDC
-AM_PROG_LIBTOOL
+AC_SEARCH_LIBS([strerror],[cposix])
+
+LT_INIT
 
 # check ibus
 PKG_CHECK_MODULES(IBUS, [
