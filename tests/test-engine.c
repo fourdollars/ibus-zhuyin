@@ -142,6 +142,33 @@ static void test_punctuation_window_m() {
     g_object_unref(engine);
 }
 
+static void test_ctrl_grave_h_1() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // 1. Press Ctrl + `
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(
+        engine,
+        IBUS_grave,
+        0,
+        IBUS_CONTROL_MASK
+    );
+
+    // 2. Press 'h'
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'h', 0, 0);
+
+    // 3. Press '1' to select the first candidate "☆"
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+
+    // Verify commit
+    g_assert_cmpstr(committed_text, ==, "☆");
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -149,6 +176,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/h_9_space", test_h_9_space);
     g_test_add_func("/engine/w_8_7", test_w_8_7);
     g_test_add_func("/engine/punctuation_window_m", test_punctuation_window_m);
+    g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
 
     return g_test_run();
 }
