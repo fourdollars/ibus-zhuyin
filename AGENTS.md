@@ -284,10 +284,12 @@ Trim trailing whitespace: yes
 ├── src/           # Main source code
 │   ├── main.c     # Program entry point
 │   ├── engine.c   # IBus engine implementation
-│   └── zhuyin.c   # Zhuyin phonetic logic
+│   ├── zhuyin.c   # Zhuyin phonetic logic
+│   └── zhuyin.xml.in.in # IBus engine configuration template
 ├── include/       # Header files
 │   ├── engine.h   # GObject type declaration for the engine
 │   ├── phone.h    # Core dictionary mapping phonetics to characters
+│   ├── phrases.h  # Phrase dictionary for common phrases
 │   ├── punctuation.h # Punctuation tables and definitions
 │   └── zhuyin.h   # Declarations for core Zhuyin logic functions
 ├── tests/         # Unit tests
