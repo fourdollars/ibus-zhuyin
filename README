@@ -4,6 +4,37 @@
 
 ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional Chinese characters with phrase support, predictive text, Hsu's keyboard layout, visual symbol keyboard, and advanced punctuation modes.
 
+## Features
+
+### Core Input Features
+- **Zhuyin/Bopomofo Input**: Traditional phonetic input method for Chinese characters using Bopomofo symbols
+- **Phrase Support**: Dictionary-based phrase input with common character combinations
+- **Predictive Text**: Association phrases with immediate selection for faster text input
+
+### Keyboard Layouts
+- **Standard Zhuyin Layout**: Default Bopomofo keyboard mapping following standard conventions
+- **Hsu's Zhuyin Layout**: Alternative keyboard layout with internationalization support for different regions
+
+### Advanced Input Modes
+- **Visual Symbol Keyboard**: On-screen keyboard interface for symbol and punctuation input
+- **Leading Key Mode**: Enhanced punctuation input mode triggered by leading characters
+- **Advanced Punctuation Modes**: Multiple punctuation input methods including Ctrl+grave and Shift+period combinations
+
+### User Interface
+- **Page Navigation**: Improved candidate list browsing with page up/down controls
+- **Auxiliary Text Updates**: Better display of current input state and suggestions
+- **Punctuation Window**: Dedicated visual interface for punctuation selection
+
+### Technical Improvements
+- **Crash Prevention**: Fixed NULL candidate handling and infinite loop issues
+- **Memory Management**: Enhanced resource cleanup and leak prevention
+- **Comprehensive Testing**: Unit tests covering all major functionality
+
+### Data Enhancements
+- **Extended Character Database**: Added missing characters from libchewing-data for broader compatibility
+- **Aligned Zhuyin Comments**: Improved phonetic annotations in data files for better maintainability
+- **Optimized Initialization**: Faster startup time and more efficient data loading
+
 ## Compile and install manually
 
     $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
