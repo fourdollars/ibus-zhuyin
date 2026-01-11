@@ -190,6 +190,45 @@ static void test_shift_period() {
     g_object_unref(engine);
 }
 
+static void test_zhu_yin() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // --- Part 1: Submit '注' (5 j 4 4) ---
+    // '5' (ㄓ), 'j' (ㄨ), '4' (ˋ)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '5', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'j', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '4', 0, 0);
+    
+    // Select candidate '4'
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '4', 0, 0);
+
+    g_assert_cmpstr(committed_text, ==, "注");
+
+    // --- Part 2: Submit '音' (u p space 2) ---
+    // Clear committed text from previous part (optional, as engine usually overwrites or appends depending on implementation, 
+    // but our mock helper just replaces committed_text. We should check if engine triggers commit signal again)
+    // In our mock: ibus_engine_commit_text frees old committed_text and sets new.
+    // So valid to check directly.
+    
+    // 'u' (ㄧ), 'p' (ㄣ)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'p', 0, 0);
+    
+    // Space (Tone 1 / Space) -> enter candidate mode
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+
+    // Select candidate '2'
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '2', 0, 0);
+
+    g_assert_cmpstr(committed_text, ==, "音");
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -199,6 +238,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/punctuation_window_m", test_punctuation_window_m);
     g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
     g_test_add_func("/engine/shift_period", test_shift_period);
+    g_test_add_func("/engine/zhu_yin", test_zhu_yin);
 
     return g_test_run();
 }
