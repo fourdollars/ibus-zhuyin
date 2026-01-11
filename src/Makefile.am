@@ -24,19 +24,16 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 libexec_PROGRAMS = ibus-engine-zhuyin
 
 ibus_engine_zhuyin_SOURCES = \
-	main.c \
-	engine.c \
-	engine.h \
-	zhuyin.c \
-	zhuyin.h \
-	phone.h \
-	punctuation.h \
-	$(NULL)
+        main.c \
+        engine.c \
+        zhuyin.c \
+        $(NULL)
+
 ibus_engine_zhuyin_CFLAGS = \
 	@IBUS_CFLAGS@ \
 	@GTK_CFLAGS@ \
 	@GLIB_CFLAGS@ \
-	-DPKGDATADIR=\"$(pkgdatadir)\"
+	-DPKGDATADIR=\"$(pkgdatadir)\" \
 	$(NULL)
 ibus_engine_zhuyin_LDFLAGS = \
 	@IBUS_LIBS@ \

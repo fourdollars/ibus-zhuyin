@@ -7,6 +7,7 @@
 // Mocking IBus functions
 static gchar *committed_text = NULL;
 static gchar *current_preedit = NULL;
+static gchar *current_aux_text = NULL;
 
 // Mocking GTK functions for punctuation window
 static GtkWidget *punctuation_window_mock = (GtkWidget *)1; // dummy non-NULL pointer
@@ -33,7 +34,10 @@ void ibus_engine_update_preedit_text(IBusEngine *engine, IBusText *text, guint c
 
 void ibus_engine_hide_lookup_table(IBusEngine *engine) {}
 void ibus_engine_update_lookup_table(IBusEngine *engine, IBusLookupTable *table, gboolean visible) {}
-void ibus_engine_update_auxiliary_text(IBusEngine *engine, IBusText *text, gboolean visible) {}
+void ibus_engine_update_auxiliary_text(IBusEngine *engine, IBusText *text, gboolean visible) {
+    if (current_aux_text) g_free(current_aux_text);
+    current_aux_text = visible ? g_strdup(text->text) : NULL;
+}
 void ibus_engine_hide_preedit_text(IBusEngine *engine) {}
 void ibus_engine_show_preedit_text(IBusEngine *engine) {}
 void ibus_engine_register_properties(IBusEngine *engine, IBusPropList *prop_list) {}
@@ -45,15 +49,11 @@ void ibus_engine_update_property(IBusEngine *engine, IBusProperty *prop) {}
 static void test_hsu_layout() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
     
-    g_print("Calling enable...\n");
     // Enable to setup properties
     IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
-    g_print("Enable returned.\n");
     
     // Switch to Hsu's layout
-    g_print("Calling property_activate...\n");
     IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.Hsu", PROP_STATE_CHECKED);
-    g_print("property_activate returned.\n");
     
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -105,49 +105,26 @@ static void test_h_9_space() {
 }
 
 static void test_w_8_7() {
-
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
 
-    
-
     // Reset state
-
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
-
     if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
 
-    
-
     // Simulate 'w'
-
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'w', 0, 0);
-
     g_assert_cmpstr(current_preedit, ==, "ㄊ");
 
-    
-
     // Simulate '8'
-
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '8', 0, 0);
-
     g_assert_cmpstr(current_preedit, ==, "ㄊㄚ");
 
-    
-
     // Simulate '7' - Tone 5 (Neutral)
-
-    // Should commit '遢' (as it is the single candidate for ㄊㄚ˙)
-
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '7', 0, 0);
-
-    
 
     g_assert_cmpstr(committed_text, ==, "遢");
 
-    
-
     g_object_unref(engine);
-
 }
 
 static void test_punctuation_window_m() {
@@ -166,12 +143,11 @@ static void test_punctuation_window_m() {
     );
     g_assert_true(handled);
 
-    // 2. Mock punctuation window as visible (simulating what g_idle_add would do)
-    // Directly set the static variable
+    // 2. Mock punctuation window as visible
     punctuation_window = punctuation_window_mock;
     punctuation_window_mock_visible = TRUE;
 
-    // 3. Press 'c' while punctuation window is visible
+    // 3. Press 'm' while punctuation window is visible
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'm', 0, 0);
 
     // Verify commit
@@ -239,31 +215,18 @@ static void test_zhu_yin() {
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
     if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
 
-    // --- Part 1: Submit '注' (5 j 4 4) ---
-    // '5' (ㄓ), 'j' (ㄨ), '4' (ˋ)
+    // --- Part 1: Submit '注' ---
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '5', 0, 0);
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'j', 0, 0);
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '4', 0, 0);
-    
-    // Select candidate '4'
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '4', 0, 0);
 
     g_assert_cmpstr(committed_text, ==, "注");
 
-    // --- Part 2: Submit '音' (u p space 2) ---
-    // Clear committed text from previous part (optional, as engine usually overwrites or appends depending on implementation, 
-    // but our mock helper just replaces committed_text. We should check if engine triggers commit signal again)
-    // In our mock: ibus_engine_commit_text frees old committed_text and sets new.
-    // So valid to check directly.
-    
-    // 'u' (ㄧ), 'p' (ㄣ)
+    // --- Part 2: Submit '音' ---
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'p', 0, 0);
-    
-    // Space (Tone 1 / Space) -> enter candidate mode
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
-
-    // Select candidate '2'
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '2', 0, 0);
 
     g_assert_cmpstr(committed_text, ==, "音");
@@ -271,17 +234,147 @@ static void test_zhu_yin() {
     g_object_unref(engine);
 }
 
+static void test_phrase_lookup() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // "一" (yi) -> u (ㄧ) + Space (Tone 1)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+
+    // "一" should be the first candidate.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    
+    // Verify "一" was committed
+    g_assert_cmpstr(committed_text, ==, "一");
+
+    // Verify "(Shift)" reminder is shown
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift)"));
+
+    // --- Part 1: Select with Shift ---
+    // Press 'Shift + 1' to select first phrase "個"
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, IBUS_SHIFT_MASK);
+    
+    // Verify that "個" was committed
+    g_assert_cmpstr(committed_text, ==, "個");
+
+    // --- Part 3: Press Shift alone ---
+    // Clear committed_text
+    g_free(committed_text); committed_text = NULL;
+    
+    // "一" (yi) -> u (ㄧ) + Space (Tone 1) -> Commit 1
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "一");
+    g_free(committed_text); committed_text = NULL;
+
+    // Now in PHRASE mode. Press Shift_L.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Shift_L, 0, 0);
+    
+    // Phrase list should still be there. Press Shift + 1 to select "個".
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, IBUS_SHIFT_MASK);
+    g_assert_cmpstr(committed_text, ==, "個");
+
+    g_object_unref(engine);
+}
+
+static void test_immediate_selection() {
+
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+
+
+    // Reset state
+
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+
+
+        // "ㄕ" (shi) -> g
+
+
+
+        IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+
+
+
+        
+
+
+
+        // Verify "(Shift)" reminder is shown
+
+
+
+        g_assert_nonnull(current_aux_text);
+
+
+
+        g_assert_true(g_str_has_suffix(current_aux_text, "(Shift)"));
+
+
+
+        
+
+
+
+        // Press 'Shift + 1' to select first candidate of "ㄕ" (which is "失" usually)
+
+
+
+    
+
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, IBUS_SHIFT_MASK);
+
+    
+
+    // Verify that "失" was committed
+
+    g_assert_cmpstr(committed_text, ==, "失");
+
+
+
+    g_object_unref(engine);
+
+}
+
+
+
 int main(int argc, char **argv) {
+
     g_test_init(&argc, &argv, NULL);
+
     ibus_init();
 
+
+
     g_test_add_func("/engine/h_9_space", test_h_9_space);
+
     g_test_add_func("/engine/w_8_7", test_w_8_7);
+
     g_test_add_func("/engine/punctuation_window_m", test_punctuation_window_m);
+
     g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
+
     g_test_add_func("/engine/shift_period", test_shift_period);
+
     g_test_add_func("/engine/zhu_yin", test_zhu_yin);
+
     g_test_add_func("/engine/hsu_layout", test_hsu_layout);
 
+    g_test_add_func("/engine/phrase_lookup", test_phrase_lookup);
+
+    g_test_add_func("/engine/immediate_selection", test_immediate_selection);
+
+
+
     return g_test_run();
+
 }
