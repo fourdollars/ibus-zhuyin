@@ -1407,4 +1407,9 @@ ibus_engine_set_cursor_location (IBusEngine *engine,
     }
 }
 
+// For testing only
+void test_set_punctuation_window(GtkWidget *widget) {
+    punctuation_window = widget;
+}
+
 /* vim:set fileencodings=utf-8 tabstop=4 expandtab shiftwidth=4 softtabstop=4: */
