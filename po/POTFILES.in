@@ -1,6 +1,6 @@
-src/phone.h
+include/phone.h
 src/zhuyin.c
-src/zhuyin.h
+include/zhuyin.h
 src/engine.c
-src/engine.h
+include/engine.h
 src/main.c

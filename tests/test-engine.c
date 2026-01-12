@@ -268,9 +268,9 @@ static void test_phrase_lookup() {
     // Verify "一" was committed
     g_assert_cmpstr(committed_text, ==, "一");
 
-    // Verify "(Shift)" reminder is shown
+    // Verify "(Shift to select)" reminder is shown
     g_assert_nonnull(current_aux_text);
-    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift)"));
+    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
 
     // --- Part 1: Select with Shift ---
     // Press 'Shift + 1' to select first phrase "個"
@@ -326,7 +326,7 @@ static void test_immediate_selection() {
 
 
 
-        // Verify "(Shift)" reminder is shown
+        // Verify "(Shift to select)" reminder is shown
 
 
 
@@ -334,7 +334,7 @@ static void test_immediate_selection() {
 
 
 
-        g_assert_true(g_str_has_suffix(current_aux_text, "(Shift)"));
+        g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
 
 
 
