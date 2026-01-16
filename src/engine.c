@@ -60,6 +60,7 @@ struct _IBusZhuyinEngine {
     ZhuyinLayout layout;
     IBusProperty *prop_menu;
     IBusConfig *config;
+    gboolean enable_phrase_lookup;
 };
 
 struct _IBusZhuyinEngineClass {
@@ -437,6 +438,7 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 
     zhuyin->layout = LAYOUT_STANDARD;
     zhuyin->prop_menu = NULL;
+    zhuyin->enable_phrase_lookup = FALSE;
 
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
     ibus_lookup_table_set_orientation(zhuyin->table, IBUS_ORIENTATION_HORIZONTAL);
@@ -598,7 +600,8 @@ ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate)
     ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
 
     // Try to lookup phrases
-    ibus_zhuyin_lookup_phrase(zhuyin, text_copy);
+    if (zhuyin->enable_phrase_lookup)
+        ibus_zhuyin_lookup_phrase(zhuyin, text_copy);
     g_free(text_copy);
 
     return TRUE;
@@ -1930,6 +1933,17 @@ _update_input_mode_menu (IBusEngine *engine)
                               NULL);
     ibus_prop_list_append (props, prop);
 
+    prop = ibus_property_new ("InputMode.PhraseLookup",
+                              PROP_TYPE_TOGGLE,
+                              ibus_text_new_from_string (_("Quick Match")),
+                              NULL,
+                              NULL,
+                              TRUE,
+                              TRUE,
+                              zhuyin->enable_phrase_lookup ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                              NULL);
+    ibus_prop_list_append (props, prop);
+
     ibus_property_set_sub_props(zhuyin->prop_menu, props);
     ibus_engine_update_property (engine, zhuyin->prop_menu);
 }
@@ -1940,6 +1954,16 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
                                       guint prop_state)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+
+    if (g_strcmp0 (prop_name, "InputMode.PhraseLookup") == 0) {
+        zhuyin->enable_phrase_lookup = (prop_state == PROP_STATE_CHECKED);
+        if (zhuyin->config) {
+             GVariant *variant = g_variant_new_boolean(zhuyin->enable_phrase_lookup);
+             ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "phrase_lookup", variant);
+        }
+        _update_input_mode_menu(engine);
+        return;
+    }
 
     if (prop_state != PROP_STATE_CHECKED)
         return;
@@ -1995,6 +2019,12 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
             } else {
                 zhuyin->layout = LAYOUT_STANDARD;
             }
+            g_variant_unref(variant);
+        }
+
+        variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "phrase_lookup");
+        if (variant) {
+            zhuyin->enable_phrase_lookup = g_variant_get_boolean(variant);
             g_variant_unref(variant);
         }
     }

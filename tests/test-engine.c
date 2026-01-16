@@ -256,6 +256,10 @@ static void test_zhu_yin() {
 
 static void test_phrase_lookup() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    
+    // Enable Phrase Lookup (Quick Match)
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -328,6 +332,8 @@ static void test_immediate_selection() {
 
 static void test_phrase_return() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -378,6 +384,8 @@ static void test_normal_return_with_candidates() {
 
 static void test_phrase_navigation_and_shortcuts() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -443,6 +451,8 @@ static void test_phrase_navigation_and_shortcuts() {
 
 static void test_phrase_cursor_navigation() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -702,6 +712,52 @@ static void test_normal_typing_handled() {
     g_object_unref(engine);
 }
 
+static void test_quick_match_toggle() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    // Force config to NULL
+    if (zhuyin->config) {
+        g_object_unref(zhuyin->config);
+        zhuyin->config = NULL;
+    }
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+
+    // 1. Default disabled
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "一");
+    // Should NOT be in PHRASE mode
+    g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_NORMAL);
+
+    // 2. Enable
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
+    
+    // Test Phrase Mode
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "一");
+    // Should be in PHRASE mode
+    g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_PHRASE);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0); // Exit phrase mode
+
+    // 3. Disable
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_UNCHECKED);
+    
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "一");
+    // Should NOT be in PHRASE mode
+    g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_NORMAL);
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -726,6 +782,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/arrow_keys_normal_mode", test_arrow_keys_normal_mode);
     g_test_add_func("/engine/ctrl_key_pass_through", test_ctrl_key_pass_through);
     g_test_add_func("/engine/normal_typing_handled", test_normal_typing_handled);
+    g_test_add_func("/engine/quick_match_toggle", test_quick_match_toggle);
 
     return g_test_run();
 }
