@@ -59,10 +59,10 @@ struct _IBusZhuyinEngine {
     
     ZhuyinLayout layout;
     IBusProperty *prop_menu;
-    IBusProperty *prop_phrase;
+    IBusProperty *prop_association;
     IBusProperty *prop_quick;
     IBusConfig *config;
-    gboolean enable_phrase_lookup;
+    gboolean enable_association;
     gboolean enable_quick_match;
 };
 
@@ -449,7 +449,7 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
 
     zhuyin->layout = LAYOUT_STANDARD;
     zhuyin->prop_menu = NULL;
-    zhuyin->enable_phrase_lookup = FALSE;
+    zhuyin->enable_association = FALSE;
     zhuyin->enable_quick_match = FALSE;
 
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
@@ -612,7 +612,7 @@ ibus_zhuyin_engine_commit_candidate (IBusZhuyinEngine *zhuyin, gint candidate)
     ibus_zhuyin_engine_reset((IBusEngine *) zhuyin);
 
     // Try to lookup phrases
-    if (zhuyin->enable_phrase_lookup)
+    if (zhuyin->enable_association)
         ibus_zhuyin_lookup_phrase(zhuyin, text_copy);
     g_free(text_copy);
 
@@ -2019,9 +2019,9 @@ _update_toggles (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
 
-    if (zhuyin->prop_phrase) {
-        ibus_property_set_state(zhuyin->prop_phrase, zhuyin->enable_phrase_lookup ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED);
-        ibus_engine_update_property(engine, zhuyin->prop_phrase);
+    if (zhuyin->prop_association) {
+        ibus_property_set_state(zhuyin->prop_association, zhuyin->enable_association ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED);
+        ibus_engine_update_property(engine, zhuyin->prop_association);
     }
 
     if (zhuyin->prop_quick) {
@@ -2037,11 +2037,11 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
 
-    if (g_strcmp0 (prop_name, "InputMode.PhraseLookup") == 0) {
-        zhuyin->enable_phrase_lookup = (prop_state == PROP_STATE_CHECKED);
+    if (g_strcmp0 (prop_name, "InputMode.Association") == 0) {
+        zhuyin->enable_association = (prop_state == PROP_STATE_CHECKED);
         if (zhuyin->config) {
-             GVariant *variant = g_variant_new_boolean(zhuyin->enable_phrase_lookup);
-             ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "phrase_lookup", variant);
+             GVariant *variant = g_variant_new_boolean(zhuyin->enable_association);
+             ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "association", variant);
         }
         _update_toggles(engine);
         return;
@@ -2100,11 +2100,11 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                                            sub_props);
     g_object_ref_sink (zhuyin->prop_menu);
 
-    zhuyin->prop_phrase = ibus_property_new ("InputMode.PhraseLookup",
+    zhuyin->prop_association = ibus_property_new ("InputMode.Association",
                               PROP_TYPE_TOGGLE,
-                              ibus_text_new_from_string (_("Phrase Lookup")),
+                              ibus_text_new_from_string (_("Association")),
                               NULL, NULL, TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
-    g_object_ref_sink (zhuyin->prop_phrase);
+    g_object_ref_sink (zhuyin->prop_association);
 
     zhuyin->prop_quick = ibus_property_new ("InputMode.QuickMatch",
                               PROP_TYPE_TOGGLE,
@@ -2126,9 +2126,9 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
             g_variant_unref(variant);
         }
 
-        variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "phrase_lookup");
+        variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "association");
         if (variant) {
-            zhuyin->enable_phrase_lookup = g_variant_get_boolean(variant);
+            zhuyin->enable_association = g_variant_get_boolean(variant);
             g_variant_unref(variant);
         }
 
@@ -2143,7 +2143,7 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
     _update_toggles(engine);
 
     ibus_prop_list_append (prop_list, zhuyin->prop_menu);
-    ibus_prop_list_append (prop_list, zhuyin->prop_phrase);
+    ibus_prop_list_append (prop_list, zhuyin->prop_association);
     ibus_prop_list_append (prop_list, zhuyin->prop_quick);
     ibus_engine_register_properties (engine, prop_list);
 }
