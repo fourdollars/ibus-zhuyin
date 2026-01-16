@@ -59,6 +59,8 @@ struct _IBusZhuyinEngine {
     
     ZhuyinLayout layout;
     IBusProperty *prop_menu;
+    IBusProperty *prop_phrase;
+    IBusProperty *prop_quick;
     IBusConfig *config;
     gboolean enable_phrase_lookup;
     gboolean enable_quick_match;
@@ -1903,7 +1905,7 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
 }
 
 static void
-_update_input_mode_menu (IBusEngine *engine)
+_update_keyboard_menu (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
     IBusPropList *props = ibus_prop_list_new();
@@ -1942,30 +1944,24 @@ _update_input_mode_menu (IBusEngine *engine)
                               NULL);
     ibus_prop_list_append (props, prop);
 
-    prop = ibus_property_new ("InputMode.PhraseLookup",
-                              PROP_TYPE_TOGGLE,
-                              ibus_text_new_from_string (_("Phrase Lookup")),
-                              NULL,
-                              NULL,
-                              TRUE,
-                              TRUE,
-                              zhuyin->enable_phrase_lookup ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                              NULL);
-    ibus_prop_list_append (props, prop);
-
-    prop = ibus_property_new ("InputMode.QuickMatch",
-                              PROP_TYPE_TOGGLE,
-                              ibus_text_new_from_string (_("Quick Match")),
-                              NULL,
-                              NULL,
-                              TRUE,
-                              TRUE,
-                              zhuyin->enable_quick_match ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-                              NULL);
-    ibus_prop_list_append (props, prop);
-
     ibus_property_set_sub_props(zhuyin->prop_menu, props);
     ibus_engine_update_property (engine, zhuyin->prop_menu);
+}
+
+static void
+_update_toggles (IBusEngine *engine)
+{
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+
+    if (zhuyin->prop_phrase) {
+        ibus_property_set_state(zhuyin->prop_phrase, zhuyin->enable_phrase_lookup ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED);
+        ibus_engine_update_property(engine, zhuyin->prop_phrase);
+    }
+
+    if (zhuyin->prop_quick) {
+        ibus_property_set_state(zhuyin->prop_quick, zhuyin->enable_quick_match ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED);
+        ibus_engine_update_property(engine, zhuyin->prop_quick);
+    }
 }
 
 static void
@@ -1981,7 +1977,7 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
              GVariant *variant = g_variant_new_boolean(zhuyin->enable_phrase_lookup);
              ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "phrase_lookup", variant);
         }
-        _update_input_mode_menu(engine);
+        _update_toggles(engine);
         return;
     }
 
@@ -1991,7 +1987,7 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
              GVariant *variant = g_variant_new_boolean(zhuyin->enable_quick_match);
              ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "quick_match", variant);
         }
-        _update_input_mode_menu(engine);
+        _update_toggles(engine);
         return;
     }
 
@@ -2015,7 +2011,7 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
         ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "layout", variant);
     }
 
-    _update_input_mode_menu(engine);
+    _update_keyboard_menu(engine);
 }
 
 static void ibus_zhuyin_engine_enable (IBusEngine *engine)
@@ -2037,6 +2033,18 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                                            PROP_STATE_UNCHECKED,
                                            sub_props);
     g_object_ref_sink (zhuyin->prop_menu);
+
+    zhuyin->prop_phrase = ibus_property_new ("InputMode.PhraseLookup",
+                              PROP_TYPE_TOGGLE,
+                              ibus_text_new_from_string (_("Phrase Lookup")),
+                              NULL, NULL, TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
+    g_object_ref_sink (zhuyin->prop_phrase);
+
+    zhuyin->prop_quick = ibus_property_new ("InputMode.QuickMatch",
+                              PROP_TYPE_TOGGLE,
+                              ibus_text_new_from_string (_("Quick Match")),
+                              NULL, NULL, TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
+    g_object_ref_sink (zhuyin->prop_quick);
 
     if (zhuyin->config) {
         GVariant *variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "layout");
@@ -2065,9 +2073,12 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
         }
     }
 
-    _update_input_mode_menu(engine);
+    _update_keyboard_menu(engine);
+    _update_toggles(engine);
 
     ibus_prop_list_append (prop_list, zhuyin->prop_menu);
+    ibus_prop_list_append (prop_list, zhuyin->prop_phrase);
+    ibus_prop_list_append (prop_list, zhuyin->prop_quick);
     ibus_engine_register_properties (engine, prop_list);
 }
 
