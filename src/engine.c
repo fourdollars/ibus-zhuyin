@@ -1267,6 +1267,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                 zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
             }
         }
+        return TRUE;
     }
 
     return FALSE;

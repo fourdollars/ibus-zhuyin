@@ -685,6 +685,23 @@ static void test_ctrl_key_pass_through() {
     g_object_unref(engine);
 }
 
+static void test_normal_typing_handled() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    // Force config to NULL
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    if (zhuyin->config) {
+        g_object_unref(zhuyin->config);
+        zhuyin->config = NULL;
+    }
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+
+    // Press 'a' (Valid Zhuyin)
+    gboolean res = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'a', 0, 0);
+    g_assert_true(res); // Must be TRUE
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -708,6 +725,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/immediate_selection", test_immediate_selection);
     g_test_add_func("/engine/arrow_keys_normal_mode", test_arrow_keys_normal_mode);
     g_test_add_func("/engine/ctrl_key_pass_through", test_ctrl_key_pass_through);
+    g_test_add_func("/engine/normal_typing_handled", test_normal_typing_handled);
 
     return g_test_run();
 }
