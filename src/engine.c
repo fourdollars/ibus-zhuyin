@@ -407,10 +407,15 @@ ibus_zhuyin_engine_candidate_clicked (IBusEngine *engine,
     if (button != 1)
         return;
 
-    if (index >= zhuyin->candidate_number)
+    guint page_size = ibus_lookup_table_get_page_size(zhuyin->table);
+    guint cursor_pos = ibus_lookup_table_get_cursor_pos(zhuyin->table);
+    guint page_start = (cursor_pos / page_size) * page_size;
+    guint global_index = page_start + index;
+
+    if (global_index >= zhuyin->candidate_number)
         return;
 
-    ibus_zhuyin_engine_commit_candidate (zhuyin, index);
+    ibus_zhuyin_engine_commit_candidate (zhuyin, global_index);
 }
 
 static void

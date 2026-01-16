@@ -917,6 +917,52 @@ static void test_page_down_icon() {
     g_object_unref(engine);
 }
 
+static void test_ui_click_paging() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    // Enable Quick Match to populate table in Normal mode
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+
+    // Type 'r' (ㄐ) 'u' (ㄧ) -> ji
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'r', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    
+    // Check we have enough candidates
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    guint count = ibus_lookup_table_get_number_of_candidates(zhuyin->table);
+    g_assert_cmpint(count, >, 9);
+
+    // Get candidate 0 and 9 for comparison
+    IBusText *cand0_text = ibus_lookup_table_get_candidate(zhuyin->table, 0);
+    gchar *cand0 = g_strdup(cand0_text->text);
+    IBusText *cand9_text = ibus_lookup_table_get_candidate(zhuyin->table, 9);
+    gchar *cand9 = g_strdup(cand9_text->text);
+    
+    // Page Down
+    IBUS_ENGINE_GET_CLASS(engine)->page_down(engine);
+    
+    // Verify we are on page 2 (cursor at 9?)
+    // ibus_lookup_table_page_down moves cursor to start of next page.
+    guint pos = ibus_lookup_table_get_cursor_pos(zhuyin->table);
+    g_assert_cmpint(pos, ==, 9);
+
+    // Click index 0 (relative to page 2)
+    // This simulates UI clicking the first item on the current page.
+    // If bug exists, it will commit cand0.
+    // We expect cand9.
+    IBUS_ENGINE_GET_CLASS(engine)->candidate_clicked(engine, 0, 1, 0);
+    
+    g_assert_cmpstr(committed_text, ==, cand9);
+    g_assert_cmpstr(committed_text, !=, cand0);
+
+    g_free(cand0);
+    g_free(cand9);
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -946,6 +992,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/invalid_combination_aux", test_invalid_combination_aux);
     g_test_add_func("/engine/normal_mode_navigation", test_normal_mode_navigation);
     g_test_add_func("/engine/page_down_icon", test_page_down_icon);
+    g_test_add_func("/engine/ui_click_paging", test_ui_click_paging);
 
     return g_test_run();
 }
