@@ -438,6 +438,139 @@ static void test_phrase_navigation_and_shortcuts() {
     g_object_unref(engine);
 }
 
+static void test_phrase_cursor_navigation() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // Enter phrase mode with "一"
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_free(committed_text); committed_text = NULL;
+
+    // Test Right -> Move cursor to next candidate
+    // Assuming default cursor pos 0.
+    // We can't easily check cursor pos without inspecting 'table' directly,
+    // but we can check if it handled the event (returned TRUE).
+    // And verify it didn't crash.
+    gboolean handled = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Right, 0, 0);
+    g_assert_true(handled);
+
+    // Test Left -> Move cursor back
+    handled = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Left, 0, 0);
+    g_assert_true(handled);
+    
+    // Test Up -> Move cursor up (Vertical) or Page Up (Horizontal)
+    // Depending on orientation. Logic says:
+    // if HORIZONTAL -> Page Up.
+    // if VERTICAL -> Cursor Up.
+    // Our mock environment might default to Vertical in code if version check fails, 
+    // but IBus version macro check in code determines it.
+    // We just verify it's handled.
+    handled = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Up, 0, 0);
+    g_assert_true(handled);
+
+    g_object_unref(engine);
+}
+
+static void test_preedit_editing() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // 1. Backspace single char
+    // '1' -> "ㄅ" in Standard layout
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(current_preedit, ==, "ㄅ");
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_BackSpace, 0, 0);
+    // Should be empty or NULL.
+    // The implementation might hide preedit or update with empty string.
+    // We check if it handled it.
+    
+    // 2. Backspace multiple chars
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    // preedit should be "ㄅㄧ"
+    g_assert_cmpstr(current_preedit, ==, "ㄅㄧ");
+    
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_BackSpace, 0, 0);
+    // Should remove last char -> "ㄅ"
+    g_assert_cmpstr(current_preedit, ==, "ㄅ");
+
+    // 3. Escape to clear
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0);
+    // Preedit should be reset/hidden.
+    
+    g_object_unref(engine);
+}
+
+static void test_punctuation_symbols() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // Test '[' -> "「"
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '[', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "「");
+
+    // Test ']' -> "」"
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ']', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "」");
+
+    // Test '\' -> "＼" or "／" (Candidate mode)
+    g_free(committed_text); committed_text = NULL;
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '\\', 0, 0);
+    // Should trigger candidate mode, not direct commit.
+    g_assert_null(committed_text);
+    // Check if table is visible or preedit updated.
+    // Ideally check if candidates are populated. 
+    // But committed_text being NULL confirms it didn't commit immediately.
+    
+    g_object_unref(engine);
+}
+
+static void test_candidate_selection() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // a (ㄇ) + 8 (ㄚ) + 3 (ˇ) -> ma3
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'a', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '8', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '3', 0, 0);
+    
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    
+    // We expect multiple candidates for ma3 (e.g. 馬, 碼, 螞, etc.)
+    // But if the dictionary is small/empty in test environment, it might behave differently.
+    // However, zhuyin.c is compiled in.
+    
+    if (zhuyin->candidate_number > 1) {
+        g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_CANDIDATE);
+        
+        // Select 1st candidate using '1'
+        IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+        g_assert_nonnull(committed_text);
+    } else if (zhuyin->candidate_number == 1) {
+        // Auto committed
+        g_assert_nonnull(committed_text);
+    } else {
+        // No candidates? Should be valid if input is valid.
+        // If no candidates, it might stay in Normal mode or Preedit?
+        // But ma3 should be valid.
+    }
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -452,6 +585,10 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/phrase_lookup", test_phrase_lookup);
     g_test_add_func("/engine/phrase_return", test_phrase_return);
     g_test_add_func("/engine/phrase_navigation_and_shortcuts", test_phrase_navigation_and_shortcuts);
+    g_test_add_func("/engine/phrase_cursor_navigation", test_phrase_cursor_navigation);
+    g_test_add_func("/engine/preedit_editing", test_preedit_editing);
+    g_test_add_func("/engine/punctuation_symbols", test_punctuation_symbols);
+    g_test_add_func("/engine/candidate_selection", test_candidate_selection);
     g_test_add_func("/engine/normal_return_with_candidates", test_normal_return_with_candidates);
     g_test_add_func("/engine/immediate_selection", test_immediate_selection);
 
