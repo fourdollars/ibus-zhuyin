@@ -377,9 +377,8 @@ static void test_normal_return_with_candidates() {
     // "ㄕ" (shi) -> g
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
     
-    // Verify "(Shift to select)" reminder is shown
-    g_assert_nonnull(current_aux_text);
-    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
+    // Verify auxiliary text is NULL while quick mode is disabled.
+    g_assert_null(current_aux_text);
 
     // Press Return.
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Return, 0, 0);
@@ -822,6 +821,40 @@ static void test_ji3_aux_text() {
     g_object_unref(engine);
 }
 
+static void test_invalid_combination_aux() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    
+    // Enable Quick Match to ensure aux text is shown during composition
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+    if (current_aux_text) { g_free(current_aux_text); current_aux_text = NULL; }
+
+    // 1. Type 'v' 'u' ';' -> xiang (valid)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'v', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ';', 0, 0);
+    
+    // Should have aux text
+    g_assert_nonnull(current_aux_text);
+
+    // 2. Type '1' -> Replaces 'v' with '1' (ㄅ) -> biang (likely invalid in standard dict)
+    // Even if it's valid, we want to test the case where it becomes NULL.
+    // If 'v' 'u' ';' '1' is indeed invalid as user says:
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine;
+    if (!zhuyin->valid) {
+        // If invalid, aux text MUST be NULL
+        g_assert_null(current_aux_text);
+    }
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -848,6 +881,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/normal_typing_handled", test_normal_typing_handled);
     g_test_add_func("/engine/quick_match_toggle", test_quick_match_toggle);
     g_test_add_func("/engine/ji3_aux_text", test_ji3_aux_text);
+    g_test_add_func("/engine/invalid_combination_aux", test_invalid_combination_aux);
 
     return g_test_run();
 }

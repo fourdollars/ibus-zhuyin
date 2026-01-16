@@ -371,7 +371,7 @@ ibus_zhuyin_engine_update_aux_text(IBusZhuyinEngine *zhuyin)
             aux_str = g_strdup(_("(Shift to select)"));
         }
         visible = TRUE;
-    } else if (zhuyin->candidate_number > zhuyin->page_size) {
+    } else if (zhuyin->mode == IBUS_ZHUYIN_MODE_CANDIDATE && zhuyin->candidate_number > zhuyin->page_size) {
         gint pos = ibus_lookup_table_get_cursor_pos(zhuyin->table);
         gint page = pos / zhuyin->page_size;
         aux_str = g_strdup_printf("%d / %d", page + 1, zhuyin->page_max + 1);
@@ -1268,6 +1268,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         if (zhuyin->candidate_member == NULL) {
             zhuyin->valid = FALSE;
             ibus_engine_hide_lookup_table ((IBusEngine *)zhuyin);
+            ibus_zhuyin_engine_update_aux_text (zhuyin);
         } else {
             zhuyin->valid = TRUE;
             if (type == 4) {
