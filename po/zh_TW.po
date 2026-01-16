@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ibus-zhuyin 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/fourdollars/ibus-zhuyin/issues\n"
-"POT-Creation-Date: 2026-01-12 21:31+0800\n"
+"POT-Creation-Date: 2026-01-16 19:26+0800\n"
 "PO-Revision-Date: 2026-01-12 21:40+0800\n"
 "Last-Translator: Shih-Yuan Lee (FourDollars)\n"
 "Language-Team: Shih-Yuan Lee (FourDollars)\n"
@@ -16,26 +16,38 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/engine.c:362
+#: src/engine.c:371
 #, c-format
 msgid "%d / %d (Shift to select)"
 msgstr "%d / %d (按 Shift 選字)"
 
-#: src/engine.c:364
+#: src/engine.c:373
 msgid "(Shift to select)"
 msgstr "(按 Shift 選字)"
 
-#: src/engine.c:1810 src/engine.c:1842 src/engine.c:1880
+#: src/engine.c:1982
 msgid "Standard"
 msgstr "標準"
 
-#: src/engine.c:1821 src/engine.c:1853 src/engine.c:1891
+#: src/engine.c:1993
 msgid "Hsu's"
 msgstr "許氏"
 
-#: src/engine.c:1902
+#: src/engine.c:2004
+msgid "Eten"
+msgstr "倚天"
+
+#: src/engine.c:2094
 msgid "Keyboard"
 msgstr "鍵盤"
+
+#: src/engine.c:2105
+msgid "Association"
+msgstr "關聯字"
+
+#: src/engine.c:2111
+msgid "Quick Match"
+msgstr "快速選字"
 
 #: src/main.c:77 src/main.c:78
 msgid "Zhuyin"
