@@ -36,6 +36,7 @@ typedef struct _IBusZhuyinEngineClass IBusZhuyinEngineClass;
 typedef enum {
     LAYOUT_STANDARD = 0,
     LAYOUT_HSU      = 1,
+    LAYOUT_ETEN     = 2,
 } ZhuyinLayout;
 
 struct _IBusZhuyinEngine {
@@ -796,6 +797,32 @@ get_zhuyin_index(IBusZhuyinEngine *zhuyin, guint keyval, gint type)
                 case '6': return 1; case '3': return 2; case '4': return 3; case '7': return 4;
             }
         }
+    } else if (zhuyin->layout == LAYOUT_ETEN) { // Eten
+        if (type == 1) { // Initial
+            switch (keyval) {
+                case 'b': return 1; case 'p': return 2; case 'm': return 3; case 'f': return 4;
+                case 'd': return 5; case 't': return 6; case 'n': return 7; case 'l': return 8;
+                case 'v': return 9; case 'k': return 10; case 'h': return 11;
+                case 'g': return 12; case '7': return 13; case 'c': return 14;
+                case ',': return 15; case '.': return 16; case '/': return 17; case 'j': return 18;
+                case ';': return 19; case '\'': return 20; case 's': return 21;
+            }
+        } else if (type == 2) { // Medial
+            switch (keyval) {
+                case 'e': return 1; case 'x': return 2; case 'u': return 3;
+            }
+        } else if (type == 3) { // Final
+            switch (keyval) {
+                case 'a': return 1; case 'o': return 2; case 'r': return 3; case 'w': return 4;
+                case 'i': return 5; case 'q': return 6; case 'z': return 7; case 'y': return 8;
+                case '8': return 9; case '9': return 10; case '0': return 11; case '-': return 12;
+                case '=': return 13;
+            }
+        } else if (type == 4) { // Tone
+            switch (keyval) {
+                case '2': return 1; case '3': return 2; case '4': return 3; case '1': return 4;
+            }
+        }
     } else { // Hsu
         if (type == 1) { // Initial
             switch (keyval) {
@@ -876,6 +903,56 @@ get_zhuyin_guess(IBusZhuyinEngine *zhuyin, guint keyval, gboolean prefer_final, 
             case '4': *phonetic = "ˋ"; *type = 4; break;
             case '6': *phonetic = "ˊ"; *type = 4; break;
             case '7': *phonetic = "˙"; *type = 4; break;
+        }
+        return;
+    }
+
+    if (zhuyin->layout == LAYOUT_ETEN) {
+        switch (keyval) {
+            case 'b': *phonetic = "ㄅ"; *type = 1; break;
+            case 'p': *phonetic = "ㄆ"; *type = 1; break;
+            case 'm': *phonetic = "ㄇ"; *type = 1; break;
+            case 'f': *phonetic = "ㄈ"; *type = 1; break;
+            case 'd': *phonetic = "ㄉ"; *type = 1; break;
+            case 't': *phonetic = "ㄊ"; *type = 1; break;
+            case 'n': *phonetic = "ㄋ"; *type = 1; break;
+            case 'l': *phonetic = "ㄌ"; *type = 1; break;
+            case 'v': *phonetic = "ㄍ"; *type = 1; break;
+            case 'k': *phonetic = "ㄎ"; *type = 1; break;
+            case 'h': *phonetic = "ㄏ"; *type = 1; break;
+            case 'g': *phonetic = "ㄐ"; *type = 1; break;
+            case '7': *phonetic = "ㄑ"; *type = 1; break;
+            case 'c': *phonetic = "ㄒ"; *type = 1; break;
+            case ',': *phonetic = "ㄓ"; *type = 1; break;
+            case '.': *phonetic = "ㄔ"; *type = 1; break;
+            case '/': *phonetic = "ㄕ"; *type = 1; break;
+            case 'j': *phonetic = "ㄖ"; *type = 1; break;
+            case ';': *phonetic = "ㄗ"; *type = 1; break;
+            case '\'': *phonetic = "ㄘ"; *type = 1; break;
+            case 's': *phonetic = "ㄙ"; *type = 1; break;
+            
+            case 'e': *phonetic = "ㄧ"; *type = 2; break;
+            case 'x': *phonetic = "ㄨ"; *type = 2; break;
+            case 'u': *phonetic = "ㄩ"; *type = 2; break;
+            
+            case 'a': *phonetic = "ㄚ"; *type = 3; break;
+            case 'o': *phonetic = "ㄛ"; *type = 3; break;
+            case 'r': *phonetic = "ㄜ"; *type = 3; break;
+            case 'w': *phonetic = "ㄝ"; *type = 3; break;
+            case 'i': *phonetic = "ㄞ"; *type = 3; break;
+            case 'q': *phonetic = "ㄟ"; *type = 3; break;
+            case 'z': *phonetic = "ㄠ"; *type = 3; break;
+            case 'y': *phonetic = "ㄡ"; *type = 3; break;
+            case '8': *phonetic = "ㄢ"; *type = 3; break;
+            case '9': *phonetic = "ㄣ"; *type = 3; break;
+            case '0': *phonetic = "ㄤ"; *type = 3; break;
+            case '-': *phonetic = "ㄥ"; *type = 3; break;
+            case '=': *phonetic = "ㄦ"; *type = 3; break;
+            
+            case '2': *phonetic = "ˊ"; *type = 4; break;
+            case '3': *phonetic = "ˇ"; *type = 4; break;
+            case '4': *phonetic = "ˋ"; *type = 4; break;
+            case '1': *phonetic = "˙"; *type = 4; break;
         }
         return;
     }
@@ -1788,88 +1865,11 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
 }
 
 static void
-ibus_zhuyin_engine_property_activate (IBusEngine *engine,
-                                      const gchar *prop_name,
-                                      guint prop_state)
+_update_input_mode_menu (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
-
-    if (g_strcmp0 (prop_name, "InputMode.Standard") == 0) {
-        if (prop_state == PROP_STATE_CHECKED) {
-            zhuyin->layout = LAYOUT_STANDARD;
-            
-            IBusPropList *props = ibus_prop_list_new();
-            IBusProperty *prop;
-            
-            prop = ibus_property_new ("InputMode.Standard",
-                                      PROP_TYPE_RADIO,
-                                      ibus_text_new_from_string (_("Standard")),
-                                      NULL,
-                                      NULL,
-                                      TRUE,
-                                      TRUE,
-                                      PROP_STATE_CHECKED,
-                                      NULL);
-            ibus_prop_list_append (props, prop);
-            
-            prop = ibus_property_new ("InputMode.Hsu",
-                                      PROP_TYPE_RADIO,
-                                      ibus_text_new_from_string (_("Hsu's")),
-                                      NULL,
-                                      NULL,
-                                      TRUE,
-                                      TRUE,
-                                      PROP_STATE_UNCHECKED,
-                                      NULL);
-            ibus_prop_list_append (props, prop);
-            
-            ibus_property_set_sub_props(zhuyin->prop_menu, props);
-            ibus_engine_update_property (engine, zhuyin->prop_menu);
-        }
-    } else if (g_strcmp0 (prop_name, "InputMode.Hsu") == 0) {
-        if (prop_state == PROP_STATE_CHECKED) {
-            zhuyin->layout = LAYOUT_HSU;
-            
-            IBusPropList *props = ibus_prop_list_new();
-            IBusProperty *prop;
-            
-            prop = ibus_property_new ("InputMode.Standard",
-                                      PROP_TYPE_RADIO,
-                                      ibus_text_new_from_string (_("Standard")),
-                                      NULL,
-                                      NULL,
-                                      TRUE,
-                                      TRUE,
-                                      PROP_STATE_UNCHECKED,
-                                      NULL);
-            ibus_prop_list_append (props, prop);
-            
-            prop = ibus_property_new ("InputMode.Hsu",
-                                      PROP_TYPE_RADIO,
-                                      ibus_text_new_from_string (_("Hsu's")),
-                                      NULL,
-                                      NULL,
-                                      TRUE,
-                                      TRUE,
-                                      PROP_STATE_CHECKED,
-                                      NULL);
-            ibus_prop_list_append (props, prop);
-            
-            ibus_property_set_sub_props(zhuyin->prop_menu, props);
-            ibus_engine_update_property (engine, zhuyin->prop_menu);
-        }
-    }
-}
-
-static void ibus_zhuyin_engine_enable (IBusEngine *engine)
-{
-    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+    IBusPropList *props = ibus_prop_list_new();
     IBusProperty *prop;
-    IBusPropList *prop_list = ibus_prop_list_new ();
-    IBusPropList *sub_props = ibus_prop_list_new ();
-
-    ibus_zhuyin_engine_reset (engine);
-    engine_instance = engine;
 
     prop = ibus_property_new ("InputMode.Standard",
                               PROP_TYPE_RADIO,
@@ -1880,7 +1880,7 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                               TRUE,
                               zhuyin->layout == LAYOUT_STANDARD ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
                               NULL);
-    ibus_prop_list_append (sub_props, prop);
+    ibus_prop_list_append (props, prop);
 
     prop = ibus_property_new ("InputMode.Hsu",
                               PROP_TYPE_RADIO,
@@ -1891,7 +1891,52 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                               TRUE,
                               zhuyin->layout == LAYOUT_HSU ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
                               NULL);
-    ibus_prop_list_append (sub_props, prop);
+    ibus_prop_list_append (props, prop);
+
+    prop = ibus_property_new ("InputMode.Eten",
+                              PROP_TYPE_RADIO,
+                              ibus_text_new_from_string (_("Eten")),
+                              NULL,
+                              NULL,
+                              TRUE,
+                              TRUE,
+                              zhuyin->layout == LAYOUT_ETEN ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
+                              NULL);
+    ibus_prop_list_append (props, prop);
+
+    ibus_property_set_sub_props(zhuyin->prop_menu, props);
+    ibus_engine_update_property (engine, zhuyin->prop_menu);
+}
+
+static void
+ibus_zhuyin_engine_property_activate (IBusEngine *engine,
+                                      const gchar *prop_name,
+                                      guint prop_state)
+{
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+
+    if (prop_state != PROP_STATE_CHECKED)
+        return;
+
+    if (g_strcmp0 (prop_name, "InputMode.Standard") == 0) {
+        zhuyin->layout = LAYOUT_STANDARD;
+    } else if (g_strcmp0 (prop_name, "InputMode.Hsu") == 0) {
+        zhuyin->layout = LAYOUT_HSU;
+    } else if (g_strcmp0 (prop_name, "InputMode.Eten") == 0) {
+        zhuyin->layout = LAYOUT_ETEN;
+    }
+
+    _update_input_mode_menu(engine);
+}
+
+static void ibus_zhuyin_engine_enable (IBusEngine *engine)
+{
+    IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
+    IBusPropList *prop_list = ibus_prop_list_new ();
+    IBusPropList *sub_props = ibus_prop_list_new ();
+
+    ibus_zhuyin_engine_reset (engine);
+    engine_instance = engine;
 
     zhuyin->prop_menu = ibus_property_new ("InputMode",
                                            PROP_TYPE_MENU,
@@ -1903,6 +1948,8 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                                            PROP_STATE_UNCHECKED,
                                            sub_props);
     g_object_ref_sink (zhuyin->prop_menu);
+
+    _update_input_mode_menu(engine);
 
     ibus_prop_list_append (prop_list, zhuyin->prop_menu);
     ibus_engine_register_properties (engine, prop_list);
