@@ -301,97 +301,93 @@ static void test_phrase_lookup() {
 }
 
 static void test_immediate_selection() {
-
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
 
-
-
     // Reset state
-
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
-
     if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
 
+    // "ㄕ" (shi) -> g
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
 
+    // Verify "(Shift to select)" reminder is shown
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
 
-        // "ㄕ" (shi) -> g
-
-
-
-        IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
-
-
-
-        
-
-
-
-        // Verify "(Shift to select)" reminder is shown
-
-
-
-        g_assert_nonnull(current_aux_text);
-
-
-
-        g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
-
-
-
-        
-
-
-
-        // Press 'Shift + 1' to select first candidate of "ㄕ" (which is "失" usually)
-
-
-
-    
-
+    // Press 'Shift + 1' to select first candidate of "ㄕ" (which is "失" usually)
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, IBUS_SHIFT_MASK);
-
     
-
     // Verify that "失" was committed
-
     g_assert_cmpstr(committed_text, ==, "失");
 
-
-
     g_object_unref(engine);
-
 }
 
+static void test_phrase_return() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
 
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // 1. Commit "一" to enter PHRASE mode
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_assert_cmpstr(committed_text, ==, "一");
+    g_free(committed_text); committed_text = NULL;
+
+    // Verify we are in phrase mode (aux text shows "Shift to select")
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
+
+    // 2. Press Return. NEW behavior: does NOT commit "個".
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Return, 0, 0);
+    
+    // We expect committed_text to remain NULL
+    g_assert_null(committed_text);
+
+    g_object_unref(engine);
+}
+
+static void test_normal_return_with_candidates() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // "ㄕ" (shi) -> g
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    
+    // Verify "(Shift to select)" reminder is shown
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_suffix(current_aux_text, "(Shift to select)"));
+
+    // Press Return.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Return, 0, 0);
+    
+    // It should commit "ㄕ", NOT "失".
+    g_assert_cmpstr(committed_text, ==, "ㄕ");
+
+    g_object_unref(engine);
+}
 
 int main(int argc, char **argv) {
-
     g_test_init(&argc, &argv, NULL);
-
     ibus_init();
 
-
-
     g_test_add_func("/engine/h_9_space", test_h_9_space);
-
     g_test_add_func("/engine/w_8_7", test_w_8_7);
-
     g_test_add_func("/engine/punctuation_window_m", test_punctuation_window_m);
-
     g_test_add_func("/engine/ctrl_grave_h_1", test_ctrl_grave_h_1);
-
     g_test_add_func("/engine/shift_period", test_shift_period);
-
     g_test_add_func("/engine/zhu_yin", test_zhu_yin);
-
     g_test_add_func("/engine/hsu_layout", test_hsu_layout);
-
     g_test_add_func("/engine/phrase_lookup", test_phrase_lookup);
-
+    g_test_add_func("/engine/phrase_return", test_phrase_return);
+    g_test_add_func("/engine/normal_return_with_candidates", test_normal_return_with_candidates);
     g_test_add_func("/engine/immediate_selection", test_immediate_selection);
 
-
-
     return g_test_run();
-
 }

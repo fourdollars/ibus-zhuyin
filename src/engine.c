@@ -1612,10 +1612,6 @@ ibus_zhuyin_phrase_phase (IBusZhuyinEngine *zhuyin,
 
     switch (keyval) {
         case IBUS_Return: {
-            gint index = ibus_lookup_table_get_cursor_pos(zhuyin->table);
-            if (index < zhuyin->candidate_number) {
-                return ibus_zhuyin_engine_commit_candidate (zhuyin, index);
-            }
             ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
             return TRUE;
         }
