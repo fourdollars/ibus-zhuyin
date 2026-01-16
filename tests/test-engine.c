@@ -373,6 +373,71 @@ static void test_normal_return_with_candidates() {
     g_object_unref(engine);
 }
 
+static void test_phrase_navigation_and_shortcuts() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // 1. Enter phrase mode with "一" (u + Space + 1)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_free(committed_text); committed_text = NULL; // Clear "一" commit
+
+    // Verify Page 1
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_prefix(current_aux_text, "1 /"));
+
+    // 2. Test Space -> Page Down
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    g_assert_true(g_str_has_prefix(current_aux_text, "2 /"));
+
+    // 3. Test Page_Up -> Page 1
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Page_Up, 0, 0);
+    g_assert_true(g_str_has_prefix(current_aux_text, "1 /"));
+
+    // 4. Test End -> Last Page
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_End, 0, 0);
+    g_assert_false(g_str_has_prefix(current_aux_text, "1 /")); // Should not be page 1
+
+    // 5. Test Home -> Page 1
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Home, 0, 0);
+    g_assert_true(g_str_has_prefix(current_aux_text, "1 /"));
+
+    // 6. Test Arrow Down -> Move cursor, eventually page down if needed.
+    // Since we are checking paging, let's just assume arrow keys are consumed.
+    gboolean handled = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Down, 0, 0);
+    g_assert_true(handled);
+
+    // 7. Test Escape -> Reset (Exit phrase mode)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0);
+    // Aux text should be cleared or changed.
+    // In reset, it hides lookup table and updates aux text.
+    // In ibus_zhuyin_engine_reset: ibus_engine_hide_lookup_table(...) which might update aux text?
+    // ibus_zhuyin_engine_reset calls ibus_zhuyin_engine_update_aux_text(zhuyin).
+    // In reset state, aux text should be empty string (hidden).
+    // current_aux_text depends on mocking logic.
+    // void ibus_engine_update_auxiliary_text(..., visible) { ... current_aux_text = visible ? str : NULL; }
+    // If visible is FALSE, current_aux_text is NULL.
+    g_assert_null(current_aux_text);
+
+    // 8. Re-enter phrase mode to test Shift + 2 selection
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, ' ', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '1', 0, 0);
+    g_free(committed_text); committed_text = NULL;
+
+    // Test Shift + 2 (Select 2nd candidate)
+    // Note: Depends on actual candidates for "一". "個" is usually 1st.
+    // We just verify it commits *something*.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '2', 0, IBUS_SHIFT_MASK);
+    g_assert_nonnull(committed_text);
+    
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -386,6 +451,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/hsu_layout", test_hsu_layout);
     g_test_add_func("/engine/phrase_lookup", test_phrase_lookup);
     g_test_add_func("/engine/phrase_return", test_phrase_return);
+    g_test_add_func("/engine/phrase_navigation_and_shortcuts", test_phrase_navigation_and_shortcuts);
     g_test_add_func("/engine/normal_return_with_candidates", test_normal_return_with_candidates);
     g_test_add_func("/engine/immediate_selection", test_immediate_selection);
 
