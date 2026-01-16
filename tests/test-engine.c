@@ -855,6 +855,36 @@ static void test_invalid_combination_aux() {
     g_object_unref(engine);
 }
 
+static void test_normal_mode_navigation() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    // Enable Quick Match to see the table updates (otherwise table is hidden)
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // Type 'g' (ㄕ) -> Candidates available (Normal mode)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    
+    // Verify we have candidates
+    guint n = ibus_lookup_table_get_number_of_candidates(((IBusZhuyinEngine *)engine)->table);
+    g_assert_cmpint(n, >, 0);
+
+    // Test Page Down
+    // Current behavior (before fix): Returns FALSE (passed through)
+    // Desired behavior: Returns TRUE (handled) and updates table
+    gboolean res = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Page_Down, 0, 0);
+    g_assert_true(res);
+
+    // Test Down arrow
+    res = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Down, 0, 0);
+    g_assert_true(res);
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -882,6 +912,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/quick_match_toggle", test_quick_match_toggle);
     g_test_add_func("/engine/ji3_aux_text", test_ji3_aux_text);
     g_test_add_func("/engine/invalid_combination_aux", test_invalid_combination_aux);
+    g_test_add_func("/engine/normal_mode_navigation", test_normal_mode_navigation);
 
     return g_test_run();
 }

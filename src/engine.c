@@ -1285,6 +1285,64 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         return TRUE;
     }
 
+    if (zhuyin->valid) {
+#if IBUS_CHECK_VERSION(1, 5, 0)
+        IBusOrientation orientation = ibus_lookup_table_get_orientation(zhuyin->table);
+#else
+        IBusOrientation orientation = IBUS_ORIENTATION_VERTICAL;
+#endif
+        switch (keyval) {
+            case IBUS_Up:
+                if (orientation == IBUS_ORIENTATION_VERTICAL) {
+                    ibus_lookup_table_cursor_up(zhuyin->table);
+                } else {
+                    ibus_lookup_table_page_up(zhuyin->table);
+                }
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Down:
+                if (orientation == IBUS_ORIENTATION_VERTICAL) {
+                    ibus_lookup_table_cursor_down(zhuyin->table);
+                } else {
+                    ibus_lookup_table_page_down(zhuyin->table);
+                }
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Page_Up:
+                ibus_lookup_table_page_up(zhuyin->table);
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Page_Down:
+                ibus_lookup_table_page_down(zhuyin->table);
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Left:
+                if (orientation == IBUS_ORIENTATION_HORIZONTAL) {
+                    ibus_lookup_table_cursor_up(zhuyin->table);
+                } else {
+                    ibus_lookup_table_page_up(zhuyin->table);
+                }
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Right:
+                if (orientation == IBUS_ORIENTATION_HORIZONTAL) {
+                    ibus_lookup_table_cursor_down(zhuyin->table);
+                } else {
+                    ibus_lookup_table_page_down(zhuyin->table);
+                }
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_Home:
+                ibus_lookup_table_set_cursor_pos(zhuyin->table, 0);
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+            case IBUS_End:
+                ibus_lookup_table_set_cursor_pos(zhuyin->table, zhuyin->candidate_number - 1);
+                _update_lookup_table_and_aux_text (zhuyin);
+                return TRUE;
+        }
+    }
+
     return FALSE;
 }
 
