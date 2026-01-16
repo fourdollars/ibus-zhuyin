@@ -1269,7 +1269,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
         }
     }
 
-    return TRUE;
+    return FALSE;
 }
 
 static void
