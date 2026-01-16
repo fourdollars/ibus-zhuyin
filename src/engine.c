@@ -359,7 +359,8 @@ ibus_zhuyin_engine_update_aux_text(IBusZhuyinEngine *zhuyin)
     gchar *aux_str = NULL;
     gboolean visible = FALSE;
 
-    if (zhuyin->mode == IBUS_ZHUYIN_MODE_PHRASE || (zhuyin->mode == IBUS_ZHUYIN_MODE_NORMAL && zhuyin->valid)) {
+    if (zhuyin->mode == IBUS_ZHUYIN_MODE_PHRASE ||
+        (zhuyin->mode == IBUS_ZHUYIN_MODE_NORMAL && zhuyin->valid && zhuyin->enable_quick_match)) {
         if (zhuyin->candidate_number > zhuyin->page_size) {
             gint pos = ibus_lookup_table_get_cursor_pos(zhuyin->table);
             gint page = pos / zhuyin->page_size;

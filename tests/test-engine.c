@@ -805,24 +805,18 @@ static void test_ji3_aux_text() {
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'r', 0, 0);
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
     
-    // In NORMAL mode with valid candidates (ji has candidates).
-    // Current behavior: Shows "(Shift to select)".
-    // We log it to confirm.
-    if (current_aux_text) {
-        g_print("DEBUG: Normal Aux: %s\n", current_aux_text);
-    } else {
-        g_print("DEBUG: Normal Aux: NULL\n");
-    }
+    // In NORMAL mode with Quick Match OFF.
+    // Should NOT show aux text.
+    g_assert_null(current_aux_text);
 
     // 2. Type '3' (ˇ) -> ji3
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '3', 0, 0);
     
     // In CANDIDATE mode.
-    // Should NOT show "(Shift to select)".
+    // ji3 candidates usually fit on one page, so aux text should be NULL.
+    // Even if multiple pages, it should NOT show "(Shift to select)".
     if (current_aux_text) {
-        g_print("DEBUG: Candidate Aux: %s\n", current_aux_text);
-    } else {
-        g_print("DEBUG: Candidate Aux: NULL\n");
+        g_assert_false(g_str_has_suffix(current_aux_text, "(Shift to select)"));
     }
 
     g_object_unref(engine);
