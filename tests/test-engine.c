@@ -60,6 +60,9 @@ void ibus_engine_show_preedit_text(IBusEngine *engine) {}
 void ibus_engine_register_properties(IBusEngine *engine, IBusPropList *prop_list) {}
 void ibus_engine_update_property(IBusEngine *engine, IBusProperty *prop) {}
 
+// Mock IBusConfig to avoid DBus connection in tests
+#define ibus_bus_get_config(x) (NULL)
+
 // Include source directly to access static variables
 #include "../src/engine.c"
 

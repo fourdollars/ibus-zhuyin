@@ -59,6 +59,7 @@ struct _IBusZhuyinEngine {
     
     ZhuyinLayout layout;
     IBusProperty *prop_menu;
+    IBusConfig *config;
 };
 
 struct _IBusZhuyinEngineClass {
@@ -440,6 +441,18 @@ ibus_zhuyin_engine_init (IBusZhuyinEngine *zhuyin)
     zhuyin->table = ibus_lookup_table_new (zhuyin->page_size, 0, TRUE, TRUE);
     ibus_lookup_table_set_orientation(zhuyin->table, IBUS_ORIENTATION_HORIZONTAL);
     g_object_ref_sink (zhuyin->table);
+
+    IBusBus *bus = ibus_bus_new();
+    if (ibus_bus_is_connected(bus)) {
+        zhuyin->config = ibus_bus_get_config(bus);
+        if (zhuyin->config) {
+            g_object_ref_sink(zhuyin->config);
+        }
+    } else {
+        zhuyin->config = NULL;
+    }
+    g_object_unref(bus);
+
     zhuyin_init();
 }
 
@@ -464,6 +477,11 @@ ibus_zhuyin_engine_destroy (IBusZhuyinEngine *zhuyin)
     if (zhuyin->phrase_candidate) {
         g_strfreev (zhuyin->phrase_candidate);
         zhuyin->phrase_candidate = NULL;
+    }
+
+    if (zhuyin->config) {
+        g_object_unref(zhuyin->config);
+        zhuyin->config = NULL;
     }
     
     if (punctuation_window) {
@@ -1926,6 +1944,15 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
         zhuyin->layout = LAYOUT_ETEN;
     }
 
+    if (zhuyin->config) {
+        const gchar *layout_str = "standard";
+        if (zhuyin->layout == LAYOUT_HSU) layout_str = "hsu";
+        else if (zhuyin->layout == LAYOUT_ETEN) layout_str = "eten";
+        
+        GVariant *variant = g_variant_new_string(layout_str);
+        ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "layout", variant);
+    }
+
     _update_input_mode_menu(engine);
 }
 
@@ -1948,6 +1975,21 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                                            PROP_STATE_UNCHECKED,
                                            sub_props);
     g_object_ref_sink (zhuyin->prop_menu);
+
+    if (zhuyin->config) {
+        GVariant *variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "layout");
+        if (variant) {
+            const gchar *layout_str = g_variant_get_string(variant, NULL);
+            if (g_strcmp0(layout_str, "hsu") == 0) {
+                zhuyin->layout = LAYOUT_HSU;
+            } else if (g_strcmp0(layout_str, "eten") == 0) {
+                zhuyin->layout = LAYOUT_ETEN;
+            } else {
+                zhuyin->layout = LAYOUT_STANDARD;
+            }
+            g_variant_unref(variant);
+        }
+    }
 
     _update_input_mode_menu(engine);
 
