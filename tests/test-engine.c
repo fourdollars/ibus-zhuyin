@@ -655,6 +655,36 @@ static void test_arrow_keys_normal_mode() {
     g_object_unref(engine);
 }
 
+static void test_ctrl_key_pass_through() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+
+    // Test 1: Ctrl + a (Standard 'a' is 'ㄇ')
+    // Should pass through (FALSE) and NOT produce preedit.
+    gboolean res = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'a', 0, IBUS_CONTROL_MASK);
+    
+    // Expect FALSE (Pass through)
+    g_assert_false(res);
+    
+    // Expect Empty Preedit (or NULL)
+    if (current_preedit) {
+        g_assert_cmpint(strlen(current_preedit), ==, 0);
+    }
+
+    // Test 2: Alt + s (Standard 's' is 'ㄋ')
+    res = IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 's', 0, IBUS_MOD1_MASK);
+    g_assert_false(res);
+    if (current_preedit) {
+        g_assert_cmpint(strlen(current_preedit), ==, 0);
+    }
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -677,6 +707,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/normal_return_with_candidates", test_normal_return_with_candidates);
     g_test_add_func("/engine/immediate_selection", test_immediate_selection);
     g_test_add_func("/engine/arrow_keys_normal_mode", test_arrow_keys_normal_mode);
+    g_test_add_func("/engine/ctrl_key_pass_through", test_ctrl_key_pass_through);
 
     return g_test_run();
 }

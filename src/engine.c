@@ -1856,6 +1856,13 @@ ibus_zhuyin_engine_process_key_event (IBusEngine *engine,
                     zhuyin->mode = IBUS_ZHUYIN_MODE_LEADING;
                     return TRUE;
                 }
+            }
+
+            if (modifiers & (IBUS_CONTROL_MASK | IBUS_MOD1_MASK)) {
+                return FALSE;
+            }
+
+            if (zhuyin->preedit->len == 0) {
                 if (ibus_zhuyin_punctuation_phase(zhuyin, keyval, keycode, modifiers)) {
                     return TRUE;
                 }
