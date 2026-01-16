@@ -791,6 +791,43 @@ static void test_quick_match_toggle() {
     g_object_unref(engine);
 }
 
+static void test_ji3_aux_text() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_preedit) { g_free(current_preedit); current_preedit = NULL; }
+    if (current_aux_text) { g_free(current_aux_text); current_aux_text = NULL; }
+
+    // 1. Type 'r' (ㄐ) 'u' (ㄧ) -> ji
+    // Standard layout.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'r', 0, 0);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
+    
+    // In NORMAL mode with valid candidates (ji has candidates).
+    // Current behavior: Shows "(Shift to select)".
+    // We log it to confirm.
+    if (current_aux_text) {
+        g_print("DEBUG: Normal Aux: %s\n", current_aux_text);
+    } else {
+        g_print("DEBUG: Normal Aux: NULL\n");
+    }
+
+    // 2. Type '3' (ˇ) -> ji3
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, '3', 0, 0);
+    
+    // In CANDIDATE mode.
+    // Should NOT show "(Shift to select)".
+    if (current_aux_text) {
+        g_print("DEBUG: Candidate Aux: %s\n", current_aux_text);
+    } else {
+        g_print("DEBUG: Candidate Aux: NULL\n");
+    }
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -816,6 +853,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/ctrl_key_pass_through", test_ctrl_key_pass_through);
     g_test_add_func("/engine/normal_typing_handled", test_normal_typing_handled);
     g_test_add_func("/engine/quick_match_toggle", test_quick_match_toggle);
+    g_test_add_func("/engine/ji3_aux_text", test_ji3_aux_text);
 
     return g_test_run();
 }

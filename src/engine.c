@@ -1267,14 +1267,15 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
             ibus_engine_hide_lookup_table ((IBusEngine *)zhuyin);
         } else {
             zhuyin->valid = TRUE;
+            if (type == 4) {
+                zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
+            }
+
             if (zhuyin->enable_quick_match || type == 4) {
                 ibus_zhuyin_engine_update_lookup_table (zhuyin);
             } else {
                 ibus_engine_hide_lookup_table ((IBusEngine *)zhuyin);
                 ibus_zhuyin_engine_update_aux_text (zhuyin);
-            }
-            if (type == 4) {
-                zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
             }
         }
         return TRUE;
