@@ -885,6 +885,38 @@ static void test_normal_mode_navigation() {
     g_object_unref(engine);
 }
 
+static void test_page_down_icon() {
+    IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    // Enable Quick Match to ensure candidates are populated and aux text visible
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
+
+    // Reset state
+    if (committed_text) { g_free(committed_text); committed_text = NULL; }
+    if (current_aux_text) { g_free(current_aux_text); current_aux_text = NULL; }
+
+    // Type 'g' (ㄕ) -> Candidates available (Normal mode)
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    
+    // Verify Page 1
+    g_assert_nonnull(current_aux_text);
+    g_assert_true(g_str_has_prefix(current_aux_text, "1 /"));
+
+    // Simulate Page Down icon click (calls engine->page_down)
+    IBUS_ENGINE_GET_CLASS(engine)->page_down(engine);
+    
+    // Verify Page 2 (Should fail before fix)
+    g_assert_true(g_str_has_prefix(current_aux_text, "2 /"));
+
+    // Simulate Page Up icon click
+    IBUS_ENGINE_GET_CLASS(engine)->page_up(engine);
+    
+    // Verify Page 1
+    g_assert_true(g_str_has_prefix(current_aux_text, "1 /"));
+
+    g_object_unref(engine);
+}
+
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     ibus_init();
@@ -913,6 +945,7 @@ int main(int argc, char **argv) {
     g_test_add_func("/engine/ji3_aux_text", test_ji3_aux_text);
     g_test_add_func("/engine/invalid_combination_aux", test_invalid_combination_aux);
     g_test_add_func("/engine/normal_mode_navigation", test_normal_mode_navigation);
+    g_test_add_func("/engine/page_down_icon", test_page_down_icon);
 
     return g_test_run();
 }

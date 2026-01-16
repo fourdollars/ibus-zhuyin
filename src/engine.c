@@ -336,11 +336,12 @@ ibus_zhuyin_engine_page_down (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
 
-    if (zhuyin->mode != IBUS_ZHUYIN_MODE_CANDIDATE)
-        return;
-
-    ibus_lookup_table_page_down(zhuyin->table);
-    _update_lookup_table_and_aux_text (zhuyin);
+    if (zhuyin->mode == IBUS_ZHUYIN_MODE_CANDIDATE ||
+        zhuyin->mode == IBUS_ZHUYIN_MODE_PHRASE ||
+        (zhuyin->mode == IBUS_ZHUYIN_MODE_NORMAL && zhuyin->valid)) {
+        ibus_lookup_table_page_down(zhuyin->table);
+        _update_lookup_table_and_aux_text (zhuyin);
+    }
 }
 
 static void
@@ -348,11 +349,12 @@ ibus_zhuyin_engine_page_up (IBusEngine *engine)
 {
     IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *) engine;
 
-    if (zhuyin->mode != IBUS_ZHUYIN_MODE_CANDIDATE)
-        return;
-
-    ibus_lookup_table_page_up(zhuyin->table);
-    _update_lookup_table_and_aux_text (zhuyin);
+    if (zhuyin->mode == IBUS_ZHUYIN_MODE_CANDIDATE ||
+        zhuyin->mode == IBUS_ZHUYIN_MODE_PHRASE ||
+        (zhuyin->mode == IBUS_ZHUYIN_MODE_NORMAL && zhuyin->valid)) {
+        ibus_lookup_table_page_up(zhuyin->table);
+        _update_lookup_table_and_aux_text (zhuyin);
+    }
 }
 
 static void
