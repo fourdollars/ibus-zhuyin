@@ -49,8 +49,13 @@ void ibus_engine_update_preedit_text(IBusEngine *engine, IBusText *text, guint c
     current_preedit = g_strdup(text->text);
 }
 
-void ibus_engine_hide_lookup_table(IBusEngine *engine) {}
-void ibus_engine_update_lookup_table(IBusEngine *engine, IBusLookupTable *table, gboolean visible) {}
+static gboolean lookup_table_visible = FALSE;
+void ibus_engine_hide_lookup_table(IBusEngine *engine) {
+    lookup_table_visible = FALSE;
+}
+void ibus_engine_update_lookup_table(IBusEngine *engine, IBusLookupTable *table, gboolean visible) {
+    lookup_table_visible = visible;
+}
 void ibus_engine_update_auxiliary_text(IBusEngine *engine, IBusText *text, gboolean visible) {
     if (current_aux_text) g_free(current_aux_text);
     current_aux_text = visible ? g_strdup(text->text) : NULL;
@@ -309,6 +314,8 @@ static void test_phrase_lookup() {
 
 static void test_immediate_selection() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -361,6 +368,7 @@ static void test_phrase_return() {
 
 static void test_normal_return_with_candidates() {
     IBusEngine *engine = g_object_new(ibus_zhuyin_engine_get_type(), NULL);
+    IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
 
     // Reset state
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -722,6 +730,8 @@ static void test_quick_match_toggle() {
     }
     IBUS_ENGINE_GET_CLASS(engine)->enable(engine);
 
+    // --- Part 1: Phrase Lookup Toggle ---
+
     // 1. Default disabled
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'u', 0, 0);
@@ -731,7 +741,7 @@ static void test_quick_match_toggle() {
     // Should NOT be in PHRASE mode
     g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_NORMAL);
 
-    // 2. Enable
+    // 2. Enable Phrase Lookup
     IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_CHECKED);
     
     // Test Phrase Mode
@@ -744,7 +754,7 @@ static void test_quick_match_toggle() {
     g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_PHRASE);
     IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0); // Exit phrase mode
 
-    // 3. Disable
+    // 3. Disable Phrase Lookup
     IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.PhraseLookup", PROP_STATE_UNCHECKED);
     
     if (committed_text) { g_free(committed_text); committed_text = NULL; }
@@ -754,6 +764,29 @@ static void test_quick_match_toggle() {
     g_assert_cmpstr(committed_text, ==, "一");
     // Should NOT be in PHRASE mode
     g_assert_cmpint(zhuyin->mode, ==, IBUS_ZHUYIN_MODE_NORMAL);
+
+    // --- Part 2: Quick Match (Incremental Search) Toggle ---
+
+    // 4. Default disabled
+    // Type 'g' (ㄕ). Table should be hidden.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    g_assert_false(lookup_table_visible);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0);
+
+    // 5. Enable Quick Match
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_CHECKED);
+    
+    // Type 'g' (ㄕ). Table should be visible.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    g_assert_true(lookup_table_visible);
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, IBUS_Escape, 0, 0);
+
+    // 6. Disable Quick Match
+    IBUS_ENGINE_GET_CLASS(engine)->property_activate(engine, "InputMode.QuickMatch", PROP_STATE_UNCHECKED);
+    
+    // Type 'g' (ㄕ). Table should be hidden.
+    IBUS_ENGINE_GET_CLASS(engine)->process_key_event(engine, 'g', 0, 0);
+    g_assert_false(lookup_table_visible);
 
     g_object_unref(engine);
 }
