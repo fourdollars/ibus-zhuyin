@@ -1,24 +1,130 @@
+# IBus Zhuyin 輸入法
+
+## 簡介
+
+ibus-zhuyin - 一個支援詞庫、聯想字、許氏鍵盤、視覺化符號鍵盤及進階標點符號模式的繁體中文注音輸入法。
+
+## 功能特性
+
+### 核心輸入功能
+- **注音符號輸入**: 使用注音符號的傳統繁體中文輸入法
+- **聯想字**: 提供關聯詞彙即時選擇，加快輸入速度
+
+### 鍵盤配置
+- **標準注音鍵盤**: 符合標準慣例的預設注音鍵盤配置
+- **許氏鍵盤**: 支援不同地區國際化的替代鍵盤配置
+- **倚天鍵盤**: 傳統受歡迎的倚天注音鍵盤配置
+
+### 進階輸入模式
+- **視覺化符號鍵盤**: 用於輸入符號和標點的螢幕鍵盤介面
+- **前導鍵模式**: 由前導字元觸發的增強標點符號輸入模式
+- **進階標點模式**: 多種標點輸入方式，包含 Ctrl+grave (` ` `) 和 Shift+period (.) 組合
+
+### 使用者介面
+- **頁面導航**: 改進的候選詞列表瀏覽，支援 Page Up/Down 控制
+- **輔助文字更新**: 更佳的目前輸入狀態與建議顯示
+- **標點符號視窗**: 專用的標點符號選擇視覺介面
+
+### 技術改進
+- **崩潰預防**: 修正空候選詞處理與無限迴圈問題
+- **記憶體管理**: 增強資源清理與記憶體洩漏預防
+- **全面測試**: 涵蓋所有主要功能的單元測試
+
+### 資料增強
+- **擴充字元資料庫**: 加入 libchewing-data 缺少的字元以提升相容性
+- **對齊注音註釋**: 改進資料檔中的注音註解以利維護
+- **最佳化初始化**: 更快的啟動時間與更有效率的資料載入
+
+## 鍵盤快速鍵
+
+### 全域與模式切換
+| 快速鍵 | 功能 |
+| :--- | :--- |
+| **`Ctrl` + `Alt` + `,`** | **切換標點符號鍵盤**: 開啟/關閉螢幕標點符號視窗。 |
+| **`Ctrl` + `` ` ``** (Grave) | **進入前導模式**: 若預編輯區為空，啟動「快速符號模式」。允許使用單鍵輸入符號。 |
+| **`Shift`** (Left) | **切換中/英文**: 在英文與中文輸入模式間切換。 |
+
+### 前導模式 (快速符號)
+*按下 `Ctrl` + `` ` `` 後生效*
+
+| 按鍵 | 符號類別 / 功能 |
+| :--- | :--- |
+| **`[`** / **`]`** | 左 / 右括號 (【 〔 / 】 〕) |
+| **`-`** | 破折號 & 線條 (— …) |
+| **`=`** | 數學 & 等號 (＝ ≠) |
+| **`'`** | 引號 (‘ ’) |
+| **`,`** / **`.`** | 逗號 / 句號 (， / 。) |
+| **`;`** | 分號 (； ：) |
+| **`/`** | 斜線 & 問號 (／ ？) |
+| **`\`** | 反斜線 (＼ ﹨) |
+| **`a`** | 全形字母 (Ａ-Ｚ) |
+| **`b`** | 製表符 (┌ ┬ ┐) |
+| **`m`** | 數學 & 邏輯 (∀ ∃ ∮) |
+| **`u`** | 單位 & 貨幣 (℃ ℉ ％) |
+| **`n`** | 數字 (① ⑴ ⒈) |
+| **`s`** | 實心圖形 (★ ▲ ●) |
+| **`t`** | 時間 & 日本年號 (㍘ ㏳) |
+| **`h`** | 空心圖形 & 天氣 (☆ △ ☺) |
+| **`g`** | 希臘字母 (Α α Β β) |
+| **`p`** | 注音符號 (ㄅ ㄆ ㄇ) |
+| **`1`**-**`0`** | 數字 & 變體 |
+
+### 候選詞選擇
+*在選擇字元/詞彙時生效*
+
+| 快速鍵 | 功能 |
+| :--- | :--- |
+| **`Shift` + `1`..`9`** | 選擇第 1..9 個候選詞 |
+| **`Enter`** | 送出選定的候選詞或目前的預編輯緩衝區 |
+| **`Space`** | 候選詞向下翻頁 |
+| **`Page Up` / `Down`** | 候選詞頁面導航 |
+| **`Esc`** | 取消選擇 |
+
+## 安裝
+
+### Debian / Ubuntu
+在 Debian 或 Ubuntu 系統上，您可以直接使用 `apt-get` 安裝：
+
+    $ sudo apt-get install ibus-zhuyin
+
+### 手動編譯與安裝
+
+    $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
+    $ ./autogen.sh
+    $ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus CFLAGS=-g CXXFLAGS=-g
+    $ make
+    $ sudo make install
+    $ ibus-daemon -r -d -x
+
+## 授權
+
+Copyright 2012-2026 Shih-Yuan Lee (FourDollars)
+
+Licensed under GPL version 3 or any later version - see [COPYING](https://raw.githubusercontent.com/fourdollars/ibus-zhuyin/master/COPYING) file.
+
+---
+
 # IBus Zhuyin Input Method
 
 ## Introduction
 
-ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional Chinese characters with phrase support, predictive text, Hsu's keyboard layout, visual symbol keyboard, and advanced punctuation modes.
+ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional Chinese characters with Hsu's keyboard layout, Eten keyboard layout, visual symbol keyboard, predictive text (association), and advanced punctuation modes.
 
 ## Features
 
 ### Core Input Features
 - **Zhuyin/Bopomofo Input**: Traditional phonetic input method for Chinese characters using Bopomofo symbols
-- **Phrase Support**: Dictionary-based phrase input with common character combinations
-- **Predictive Text**: Association phrases with immediate selection for faster text input
+- **Predictive Text**: Association phrases with immediate selection for faster text input (can be enabled in settings)
 
 ### Keyboard Layouts
 - **Standard Zhuyin Layout**: Default Bopomofo keyboard mapping following standard conventions
 - **Hsu's Zhuyin Layout**: Alternative keyboard layout with internationalization support for different regions
+- **Eten Zhuyin Layout**: Traditional and popular Eten Bopomofo keyboard mapping
 
 ### Advanced Input Modes
 - **Visual Symbol Keyboard**: On-screen keyboard interface for symbol and punctuation input
 - **Leading Key Mode**: Enhanced punctuation input mode triggered by leading characters
-- **Advanced Punctuation Modes**: Multiple punctuation input methods including Ctrl+grave and Shift+period combinations
+- **Advanced Punctuation Modes**: Multiple punctuation input methods including Ctrl+grave (` ` `) and Shift+period (.) combinations
 
 ### User Interface
 - **Page Navigation**: Improved candidate list browsing with page up/down controls
@@ -35,7 +141,59 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional 
 - **Aligned Zhuyin Comments**: Improved phonetic annotations in data files for better maintainability
 - **Optimized Initialization**: Faster startup time and more efficient data loading
 
-## Compile and install manually
+## Keyboard Shortcuts
+
+### Global & Mode Switching
+| Hotkey | Function |
+| :--- | :--- |
+| **`Ctrl` + `Alt` + `,`** | **Toggle Punctuation Keyboard**: Opens/closes the on-screen punctuation window. |
+| **`Ctrl` + `` ` ``** (Grave) | **Enter Leading Mode**: Activates "Quick Symbol Mode" if the pre-edit area is empty. Allows typing symbols using single keys. |
+| **`Shift`** (Left) | **Toggle English/Chinese**: Toggle between English and Chinese input modes. |
+
+### Leading Mode (Quick Symbols)
+*Active after pressing `Ctrl` + `` ` ``*
+
+| Key | Symbol Category / Function |
+| :--- | :--- |
+| **`[`** / **`]`** | Left / Right Brackets (【 〔 / 】 〕) |
+| **`-`** | Dashes & Lines (— …) |
+| **`=`** | Math & Equality (＝ ≠) |
+| **`'`** | Quotes (‘ ’) |
+| **`,`** / **`.`** | Commas / Periods (， / 。) |
+| **`;`** | Semicolons (； ：) |
+| **`/`** | Slashes & Questions (／ ？) |
+| **`\`** | Backslashes (＼ ﹨) |
+| **`a`** | Full-width Alphabets (Ａ-Ｚ) |
+| **`b`** | Box Drawing (┌ ┬ ┐) |
+| **`m`** | Math & Logic (∀ ∃ ∮) |
+| **`u`** | Units & Currency (℃ ℉ ％) |
+| **`n`** | Numerals (① ⑴ ⒈) |
+| **`s`** | Solid Shapes (★ ▲ ●) |
+| **`t`** | Time & Japanese Eras (㍘ ㏳) |
+| **`h`** | Hollow Shapes & Weather (☆ △ ☺) |
+| **`g`** | Greek Alphabet (Α α Β β) |
+| **`p`** | Zhuyin Symbols (ㄅ ㄆ ㄇ) |
+| **`1`**-**`0`** | Numbers & Variations |
+
+### Candidate Selection
+*Active when selecting characters/phrases*
+
+| Hotkey | Function |
+| :--- | :--- |
+| **`Shift` + `1`..`9`** | Select Candidate 1..9 |
+| **`Enter`** | Commit selected candidate or pre-edit buffer |
+| **`Space`** | Page Down candidates |
+| **`Page Up` / `Down`** | Navigate candidate pages |
+| **`Esc`** | Cancel selection |
+
+## Installation
+
+### Debian / Ubuntu
+On Debian or Ubuntu systems, you can install it directly using `apt-get`:
+
+    $ sudo apt-get install ibus-zhuyin
+
+### Compile and install manually
 
     $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
     $ ./autogen.sh
