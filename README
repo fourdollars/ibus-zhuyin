@@ -2,7 +2,7 @@
 
 ## 簡介
 
-ibus-zhuyin - 一個支援詞庫、聯想字、許氏鍵盤、視覺化符號鍵盤及進階標點符號模式的繁體中文注音輸入法。
+ibus-zhuyin - 一個支援聯想字、許氏鍵盤、倚天鍵盤、視覺化符號鍵盤及進階標點符號模式的繁體中文注音輸入法。
 
 ## 功能特性
 
@@ -18,7 +18,7 @@ ibus-zhuyin - 一個支援詞庫、聯想字、許氏鍵盤、視覺化符號鍵
 ### 進階輸入模式
 - **視覺化符號鍵盤**: 用於輸入符號和標點的螢幕鍵盤介面
 - **前導鍵模式**: 由前導字元觸發的增強標點符號輸入模式
-- **進階標點模式**: 多種標點輸入方式，包含 Ctrl+grave (` ` `) 和 Shift+period (.) 組合
+- **進階標點模式**: 多種標點輸入方式，包含 Ctrl+grave (`` ` ``) 和 Shift+period (.) 組合
 
 ### 使用者介面
 - **頁面導航**: 改進的候選詞列表瀏覽，支援 Page Up/Down 控制
@@ -41,7 +41,7 @@ ibus-zhuyin - 一個支援詞庫、聯想字、許氏鍵盤、視覺化符號鍵
 | 快速鍵 | 功能 |
 | :--- | :--- |
 | **`Ctrl` + `Alt` + `,`** | **切換標點符號鍵盤**: 開啟/關閉螢幕標點符號視窗。 |
-| **`Ctrl` + `` ` ``** (Grave) | **進入前導模式**: 若預編輯區為空，啟動「快速符號模式」。允許使用單鍵輸入符號。 |
+| **`Ctrl` + `` ` ``** | **進入前導模式**: 若預編輯區為空，啟動「快速符號模式」。允許使用單鍵輸入符號。 |
 | **`Shift`** (Left) | **切換中/英文**: 在英文與中文輸入模式間切換。 |
 
 ### 前導模式 (快速符號)
@@ -124,7 +124,7 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional 
 ### Advanced Input Modes
 - **Visual Symbol Keyboard**: On-screen keyboard interface for symbol and punctuation input
 - **Leading Key Mode**: Enhanced punctuation input mode triggered by leading characters
-- **Advanced Punctuation Modes**: Multiple punctuation input methods including Ctrl+grave (` ` `) and Shift+period (.) combinations
+- **Advanced Punctuation Modes**: Multiple punctuation input methods including Ctrl+grave (`` ` ``) and Shift+period (.) combinations
 
 ### User Interface
 - **Page Navigation**: Improved candidate list browsing with page up/down controls
@@ -147,7 +147,7 @@ ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional 
 | Hotkey | Function |
 | :--- | :--- |
 | **`Ctrl` + `Alt` + `,`** | **Toggle Punctuation Keyboard**: Opens/closes the on-screen punctuation window. |
-| **`Ctrl` + `` ` ``** (Grave) | **Enter Leading Mode**: Activates "Quick Symbol Mode" if the pre-edit area is empty. Allows typing symbols using single keys. |
+| **`Ctrl` + `` ` ``** | **Enter Leading Mode**: Activates "Quick Symbol Mode" if the pre-edit area is empty. Allows typing symbols using single keys. |
 | **`Shift`** (Left) | **Toggle English/Chinese**: Toggle between English and Chinese input modes. |
 
 ### Leading Mode (Quick Symbols)
