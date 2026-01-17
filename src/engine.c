@@ -135,6 +135,8 @@ static void ibus_zhuyin_engine_commit_string (IBusZhuyinEngine      *zhuyin,
 static void ibus_zhuyin_engine_update_aux_text(IBusZhuyinEngine *zhuyin);
 static void _update_lookup_table_and_aux_text(IBusZhuyinEngine *zhuyin);
 static void ibus_zhuyin_engine_update      (IBusZhuyinEngine      *zhuyin);
+static guint get_zhuyin_index(IBusZhuyinEngine *zhuyin, guint keyval, gint type);
+
 
 static gboolean ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                                            guint             keyval,
@@ -681,6 +683,46 @@ ibus_zhuyin_engine_redraw (IBusZhuyinEngine *zhuyin)
     ibus_zhuyin_engine_update (zhuyin);
 }
 
+static void
+_update_candidates(IBusZhuyinEngine *zhuyin)
+{
+    if (zhuyin->preedit->len > 0) {
+        guint i = 0;
+        guint stanza = 0;
+        for (i = 0; i < 4; i++) {
+            if (zhuyin->input[i]) {
+                guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
+                if (i == 0) stanza |= idx;
+                else stanza |= (idx << (i * 8));
+            }
+        }
+        zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
+        zhuyin->candidate_number = i;
+        if (zhuyin->candidate_number > 0) {
+            if (zhuyin->candidate_number % zhuyin->page_size)
+                zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
+            else
+                zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+        } else {
+            zhuyin->page_max = 0;
+        }
+        zhuyin->valid = (zhuyin->candidate_member != NULL);
+        if (zhuyin->valid && (zhuyin->enable_quick_match || zhuyin->mode == IBUS_ZHUYIN_MODE_CANDIDATE)) {
+            ibus_zhuyin_engine_update_lookup_table(zhuyin);
+        } else {
+            ibus_engine_hide_lookup_table((IBusEngine *)zhuyin);
+            ibus_zhuyin_engine_update_aux_text(zhuyin);
+        }
+    } else {
+        zhuyin->valid = FALSE;
+        zhuyin->candidate_member = NULL;
+        zhuyin->candidate_number = 0;
+        zhuyin->page_max = 0;
+        ibus_engine_hide_lookup_table((IBusEngine *)zhuyin);
+        ibus_zhuyin_engine_update_aux_text(zhuyin);
+    }
+}
+
 static gboolean
 ibus_zhuyin_punctuation_phase (IBusZhuyinEngine *zhuyin,
                                guint             keyval,
@@ -1078,23 +1120,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                  zhuyin->display[t-1] = p;
                  
                  ibus_zhuyin_engine_redraw(zhuyin);
-                 
-                 guint i = 0;
-                 guint stanza = 0;
-                 for (i = 0; i < 4; i++) {
-                     if (zhuyin->input[i]) {
-                         guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
-                         if (i == 0) stanza |= idx;
-                         else stanza |= (idx << (i * 8));
-                     }
-                 }
-                 zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
-                 zhuyin->candidate_number = i;
-                 zhuyin->valid = (zhuyin->candidate_member != NULL);
-                 if (zhuyin->candidate_number % zhuyin->page_size)
-                    zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
-                 else
-                    zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+                 _update_candidates(zhuyin);
             }
         }
     }
@@ -1118,22 +1144,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                      zhuyin->display[0] = NULL;
                      
                      // Re-calculate stanza
-                     guint i = 0;
-                     guint stanza = 0;
-                     for (i = 0; i < 4; i++) {
-                         if (zhuyin->input[i]) {
-                             guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
-                             if (i == 0) stanza |= idx;
-                             else stanza |= (idx << (i * 8));
-                         }
-                     }
-                     zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
-                     zhuyin->candidate_number = i;
-                     zhuyin->valid = (zhuyin->candidate_member != NULL);
-                     if (zhuyin->candidate_number % zhuyin->page_size)
-                        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
-                     else
-                        zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+                     _update_candidates(zhuyin);
                  }
             }
 
@@ -1181,28 +1192,7 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
                     i--;
                 }
                 ibus_zhuyin_engine_redraw (zhuyin);
-                if (zhuyin->preedit->len > 0) {
-                    // Re-calculate candidates for the remaining preedit
-                    guint i = 0;
-                    guint stanza = 0;
-                    for (i = 0; i < 4; i++) {
-                        if (zhuyin->input[i]) {
-                            guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
-                            if (i == 0) stanza |= idx;
-                            else stanza |= (idx << (i * 8));
-                        }
-                    }
-                    zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
-                    zhuyin->candidate_number = i;
-                    zhuyin->valid = (zhuyin->candidate_member != NULL);
-                    if (zhuyin->valid) {
-                        ibus_zhuyin_engine_update_lookup_table(zhuyin);
-                    } else {
-                        ibus_engine_hide_lookup_table((IBusEngine *)zhuyin);
-                    }
-                } else {
-                    ibus_engine_hide_lookup_table((IBusEngine *)zhuyin);
-                }
+                _update_candidates(zhuyin);
                 return TRUE;
             }
         case IBUS_Return:
@@ -1250,44 +1240,16 @@ ibus_zhuyin_preedit_phase (IBusZhuyinEngine *zhuyin,
 
         ibus_zhuyin_engine_redraw (zhuyin);
 
-        for (i = 0; i < 4; i++) {
-            if (zhuyin->input[i]) {
-                guint idx = get_zhuyin_index(zhuyin, zhuyin->input[i], i + 1);
-                if (i == 0) stanza |= idx;
-                else stanza |= (idx << (i * 8));
-            }
+        if (type == 4) {
+            zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
         }
 
-        zhuyin->candidate_member = zhuyin_candidate(stanza, &i);
-        zhuyin->candidate_number = i;
-        if (zhuyin->candidate_number % zhuyin->page_size)
-            zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size;
-        else
-            zhuyin->page_max = zhuyin->candidate_number / zhuyin->page_size - 1;
+        _update_candidates(zhuyin);
 
         /* directly commit when only one candidate. */
         if (type == 4 && zhuyin->candidate_number == 1) {
             ibus_zhuyin_engine_commit_string (zhuyin, zhuyin->candidate_member[0]);
             ibus_zhuyin_engine_reset ((IBusEngine *)zhuyin);
-            return TRUE;
-        }
-
-        if (zhuyin->candidate_member == NULL) {
-            zhuyin->valid = FALSE;
-            ibus_engine_hide_lookup_table ((IBusEngine *)zhuyin);
-            ibus_zhuyin_engine_update_aux_text (zhuyin);
-        } else {
-            zhuyin->valid = TRUE;
-            if (type == 4) {
-                zhuyin->mode = IBUS_ZHUYIN_MODE_CANDIDATE;
-            }
-
-            if (zhuyin->enable_quick_match || type == 4) {
-                ibus_zhuyin_engine_update_lookup_table (zhuyin);
-            } else {
-                ibus_engine_hide_lookup_table ((IBusEngine *)zhuyin);
-                ibus_zhuyin_engine_update_aux_text (zhuyin);
-            }
         }
         return TRUE;
     }
@@ -1647,6 +1609,7 @@ ibus_zhuyin_candidate_phase (IBusZhuyinEngine *zhuyin,
                     i--;
                 }
                 ibus_zhuyin_engine_redraw (zhuyin);
+                _update_candidates(zhuyin);
                 return TRUE;
             }
     }
