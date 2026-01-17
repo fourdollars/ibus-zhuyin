@@ -2,13 +2,14 @@
 
 ## 簡介
 
-ibus-zhuyin - 一個支援聯想字、許氏鍵盤、倚天鍵盤、視覺化符號鍵盤及進階標點符號模式的繁體中文注音輸入法。
+ibus-zhuyin - 一個支援聯想字、許氏鍵盤、倚天鍵盤、視覺化符號鍵盤及進階標點符號模式的繁體中文注音輸入法。這是一個「硬核」的輸入法，設計理念強調使用者的完全掌控權，您必須手動選擇每一個要輸出的字與符號，沒有智慧選字或自動糾錯功能，適合偏好精確控制輸入內容的使用者。
 
 ## 功能特性
 
 ### 核心輸入功能
-- **注音符號輸入**: 使用注音符號的傳統繁體中文輸入法
-- **聯想字**: 提供關聯詞彙即時選擇，加快輸入速度
+- **完全手動選字**: 不具備智慧選字功能，使用者需精確選擇每一個輸入的字元，確保輸出的絕對準確性。
+- **注音符號輸入**: 使用注音符號的傳統繁體中文輸入法。
+- **聯想字**: 提供關聯字即時選擇，加快輸入速度（可於設定中開啟）。
 
 ### 鍵盤配置
 - **標準注音鍵盤**: 符合標準慣例的預設注音鍵盤配置
@@ -108,13 +109,14 @@ Licensed under GPL version 3 or any later version - see [COPYING](https://raw.gi
 
 ## Introduction
 
-ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional Chinese characters with Hsu's keyboard layout, Eten keyboard layout, visual symbol keyboard, predictive text (association), and advanced punctuation modes.
+ibus-zhuyin - a phonetic (Zhuyin/Bopomofo) Chinese input method for Traditional Chinese characters with Hsu's keyboard layout, Eten keyboard layout, visual symbol keyboard, predictive text (association), and advanced punctuation modes. This is a "hardcore" input method designed for users who demand full control; it requires manual selection for every character and symbol output, without smart predictive selection or auto-correction.
 
 ## Features
 
 ### Core Input Features
-- **Zhuyin/Bopomofo Input**: Traditional phonetic input method for Chinese characters using Bopomofo symbols
-- **Predictive Text**: Association phrases with immediate selection for faster text input (can be enabled in settings)
+- **Manual Selection**: No smart selection features. Users must precisely select every character, ensuring absolute control over the output.
+- **Zhuyin/Bopomofo Input**: Traditional phonetic input method for Chinese characters using Bopomofo symbols.
+- **Predictive Text**: Association characters with immediate selection for faster text input (can be enabled in settings).
 
 ### Keyboard Layouts
 - **Standard Zhuyin Layout**: Default Bopomofo keyboard mapping following standard conventions
