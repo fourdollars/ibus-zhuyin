@@ -157,6 +157,118 @@ static gboolean ibus_zhuyin_phrase_phase (IBusZhuyinEngine *zhuyin,
 
 G_DEFINE_TYPE (IBusZhuyinEngine, ibus_zhuyin_engine, IBUS_TYPE_ENGINE)
 
+#ifndef IBUS_ZHUYIN_TEST_BUILD
+static gchar*
+get_config_file_path (void)
+{
+    const gchar *config_dir = g_get_user_config_dir();
+    gchar *ibus_dir = g_build_filename(config_dir, "ibus", NULL);
+    
+    if (!g_file_test(ibus_dir, G_FILE_TEST_EXISTS)) {
+        g_mkdir_with_parents(ibus_dir, 0700);
+    }
+    
+    gchar *config_file = g_build_filename(ibus_dir, "ibus-zhuyin.conf", NULL);
+    g_free(ibus_dir);
+    
+    return config_file;
+}
+
+static void
+save_config_to_file (IBusZhuyinEngine *zhuyin)
+{
+    if (!zhuyin) return;
+    
+    GKeyFile *key_file = g_key_file_new();
+    gchar *config_file = get_config_file_path();
+    
+    const gchar *layout_str = "standard";
+    if (zhuyin->layout == LAYOUT_HSU) {
+        layout_str = "hsu";
+    } else if (zhuyin->layout == LAYOUT_ETEN) {
+        layout_str = "eten";
+    }
+    
+    g_key_file_set_string(key_file, "engine", "layout", layout_str);
+    g_key_file_set_boolean(key_file, "engine", "association", zhuyin->enable_association);
+    g_key_file_set_boolean(key_file, "engine", "quick_match", zhuyin->enable_quick_match);
+    g_key_file_set_integer(key_file, "engine", "punctuation_window_x", punctuation_window_x);
+    g_key_file_set_integer(key_file, "engine", "punctuation_window_y", punctuation_window_y);
+    
+    gsize length;
+    gchar *data = g_key_file_to_data(key_file, &length, NULL);
+    
+    if (data) {
+        g_file_set_contents(config_file, data, length, NULL);
+        g_free(data);
+    }
+    
+    g_key_file_free(key_file);
+    g_free(config_file);
+}
+
+static void
+load_config_from_file (IBusZhuyinEngine *zhuyin)
+{
+    if (!zhuyin) return;
+    
+    GKeyFile *key_file = g_key_file_new();
+    gchar *config_file = get_config_file_path();
+    
+    if (g_file_test(config_file, G_FILE_TEST_EXISTS)) {
+        GError *error = NULL;
+        if (g_key_file_load_from_file(key_file, config_file, G_KEY_FILE_NONE, &error)) {
+            gchar *layout_str = g_key_file_get_string(key_file, "engine", "layout", NULL);
+            if (layout_str) {
+                if (g_strcmp0(layout_str, "hsu") == 0) {
+                    zhuyin->layout = LAYOUT_HSU;
+                } else if (g_strcmp0(layout_str, "eten") == 0) {
+                    zhuyin->layout = LAYOUT_ETEN;
+                } else {
+                    zhuyin->layout = LAYOUT_STANDARD;
+                }
+                g_free(layout_str);
+            }
+            
+            GError *err = NULL;
+            gboolean association = g_key_file_get_boolean(key_file, "engine", "association", &err);
+            if (!err) {
+                zhuyin->enable_association = association;
+            }
+            if (err) g_error_free(err);
+            
+            err = NULL;
+            gboolean quick_match = g_key_file_get_boolean(key_file, "engine", "quick_match", &err);
+            if (!err) {
+                zhuyin->enable_quick_match = quick_match;
+            }
+            if (err) g_error_free(err);
+            
+            err = NULL;
+            gint x = g_key_file_get_integer(key_file, "engine", "punctuation_window_x", &err);
+            if (!err) {
+                punctuation_window_x = x;
+            }
+            if (err) g_error_free(err);
+            
+            err = NULL;
+            gint y = g_key_file_get_integer(key_file, "engine", "punctuation_window_y", &err);
+            if (!err) {
+                punctuation_window_y = y;
+            }
+            if (err) g_error_free(err);
+        }
+        if (error) g_error_free(error);
+    }
+    
+    g_key_file_free(key_file);
+    g_free(config_file);
+}
+#else
+static void save_config_to_file (IBusZhuyinEngine *zhuyin) { }
+static void load_config_from_file (IBusZhuyinEngine *zhuyin) { }
+#endif
+
 static void on_punctuation_button_clicked(GtkButton *button, gpointer user_data) {
     const gchar *symbol = (const gchar *)user_data;
     if (engine_instance && symbol) {
@@ -194,10 +306,14 @@ static gboolean on_punctuation_window_motion_notify(GtkWidget *widget, GdkEventM
 }
 
 static gboolean on_punctuation_window_button_release(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-    if (event->button == 1) { // Left mouse button
+    if (event->button == 1) {
         punctuation_window_dragging = FALSE;
-        // Store the final position
         gtk_window_get_position(GTK_WINDOW(widget), &punctuation_window_x, &punctuation_window_y);
+        
+        if (engine_instance) {
+            IBusZhuyinEngine *zhuyin = (IBusZhuyinEngine *)engine_instance;
+            save_config_to_file(zhuyin);
+        }
     }
     return TRUE;
 }
@@ -2002,20 +2118,14 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
 
     if (g_strcmp0 (prop_name, "InputMode.Association") == 0) {
         zhuyin->enable_association = (prop_state == PROP_STATE_CHECKED);
-        if (zhuyin->config) {
-             GVariant *variant = g_variant_new_boolean(zhuyin->enable_association);
-             ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "association", variant);
-        }
+        save_config_to_file(zhuyin);
         _update_toggles(engine);
         return;
     }
 
     if (g_strcmp0 (prop_name, "InputMode.QuickMatch") == 0) {
         zhuyin->enable_quick_match = (prop_state == PROP_STATE_CHECKED);
-        if (zhuyin->config) {
-             GVariant *variant = g_variant_new_boolean(zhuyin->enable_quick_match);
-             ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "quick_match", variant);
-        }
+        save_config_to_file(zhuyin);
         _update_toggles(engine);
         return;
     }
@@ -2031,15 +2141,7 @@ ibus_zhuyin_engine_property_activate (IBusEngine *engine,
         zhuyin->layout = LAYOUT_ETEN;
     }
 
-    if (zhuyin->config) {
-        const gchar *layout_str = "standard";
-        if (zhuyin->layout == LAYOUT_HSU) layout_str = "hsu";
-        else if (zhuyin->layout == LAYOUT_ETEN) layout_str = "eten";
-        
-        GVariant *variant = g_variant_new_string(layout_str);
-        ibus_config_set_value(zhuyin->config, "engine/Zhuyin", "layout", variant);
-    }
-
+    save_config_to_file(zhuyin);
     _update_keyboard_menu(engine);
 }
 
@@ -2075,32 +2177,7 @@ static void ibus_zhuyin_engine_enable (IBusEngine *engine)
                               NULL, NULL, TRUE, TRUE, PROP_STATE_UNCHECKED, NULL);
     g_object_ref_sink (zhuyin->prop_quick);
 
-    if (zhuyin->config) {
-        GVariant *variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "layout");
-        if (variant) {
-            const gchar *layout_str = g_variant_get_string(variant, NULL);
-            if (g_strcmp0(layout_str, "hsu") == 0) {
-                zhuyin->layout = LAYOUT_HSU;
-            } else if (g_strcmp0(layout_str, "eten") == 0) {
-                zhuyin->layout = LAYOUT_ETEN;
-            } else {
-                zhuyin->layout = LAYOUT_STANDARD;
-            }
-            g_variant_unref(variant);
-        }
-
-        variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "association");
-        if (variant) {
-            zhuyin->enable_association = g_variant_get_boolean(variant);
-            g_variant_unref(variant);
-        }
-
-        variant = ibus_config_get_value(zhuyin->config, "engine/Zhuyin", "quick_match");
-        if (variant) {
-            zhuyin->enable_quick_match = g_variant_get_boolean(variant);
-            g_variant_unref(variant);
-        }
-    }
+    load_config_from_file(zhuyin);
 
     _update_keyboard_menu(engine);
     _update_toggles(engine);

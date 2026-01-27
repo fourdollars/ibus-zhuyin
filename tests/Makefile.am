@@ -12,7 +12,8 @@ test_engine_CFLAGS = \
 	@IBUS_CFLAGS@ \
 	@GTK_CFLAGS@ \
 	@GLIB_CFLAGS@ \
-	-DPKGDATADIR="$(pkgdatadir)"
+	-DPKGDATADIR="$(pkgdatadir)" \
+	-DIBUS_ZHUYIN_TEST_BUILD
 
 test_engine_LDFLAGS = \
 	@IBUS_LIBS@ \
