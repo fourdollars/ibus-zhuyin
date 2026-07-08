@@ -1,8 +1,8 @@
 # vim:set noet ts=4:
 #
-# ibus-anthy - The template engine for IBus
+# ibus-zhuyin - Traditional Zhuyin Chinese Input Method
 #
-# Copyright (c) 2007-2011 Peng Huang <shawn.p.huang@gmail.com>
+# Copyright (c) 2012-2026 Shih-Yuan Lee <fourdollars@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

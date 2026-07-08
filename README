@@ -90,6 +90,14 @@ ibus-zhuyin - 一個支援聯想字、許氏鍵盤、倚天鍵盤、視覺化符
 
 ### 手動編譯與安裝
 
+在手動編譯之前，您必須先安裝相關的編譯依賴套件。在 Debian / Ubuntu 系統上，可以使用以下命令安裝：
+
+    $ sudo apt-get install build-essential libgtk-3-dev libibus-1.0-dev libglib2.0-dev gettext intltool libtool autoconf automake pkg-config
+
+> **注意：** 由於視覺化符號鍵盤功能引入了新的 GTK 3 依賴，而目前官方套件庫中的版本較舊，因此執行 `sudo apt-get build-dep ibus-zhuyin` 會因為缺少 `libgtk-3-dev` 而導致編譯失敗。請務必手動安裝上述依賴套件。
+
+接著進行編譯與安裝：
+
     $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
     $ ./autogen.sh
     $ ./configure --prefix=/usr --libexecdir=/usr/lib/ibus CFLAGS=-g CXXFLAGS=-g
@@ -196,6 +204,14 @@ On Debian or Ubuntu systems, you can install it directly using `apt-get`:
     $ sudo apt-get install ibus-zhuyin
 
 ### Compile and install manually
+
+Before compiling, you need to install the required build dependencies. On Debian / Ubuntu systems, you can install them with the following command:
+
+    $ sudo apt-get install build-essential libgtk-3-dev libibus-1.0-dev libglib2.0-dev gettext intltool libtool autoconf automake pkg-config
+
+> **Note:** Because the visual symbol keyboard feature introduces a new GTK 3 dependency which is not yet present in the older package versions in official repositories, running `sudo apt-get build-dep ibus-zhuyin` will not install `libgtk-3-dev` and the build will fail. Make sure to install the dependencies manually using the command above.
+
+Then, compile and install:
 
     $ git clone https://github.com/fourdollars/ibus-zhuyin.git && cd ibus-zhuyin
     $ ./autogen.sh
