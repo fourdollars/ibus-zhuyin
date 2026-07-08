@@ -1,3 +1,14 @@
+Version 0.2.0 - July 2026
+
+ * Implement visual symbol keyboard using GTK 3.
+ * Add support for Eten and Hsu's Zhuyin keyboard layouts.
+ * Implement association phrases (predictive text) with immediate selection.
+ * Add Quick Match (incremental search) option.
+ * Implement leading key mode (Quick Symbols) and advanced punctuation modes.
+ * Clean up build configuration and fix Autoconf warnings.
+ * Improve robustness with crash fixes, memory leak preventions, and page navigation updates.
+ * Add comprehensive unit testing suite.
+
 Version 0.1.0 - August 2014
 
  * Initial release.
